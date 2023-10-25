@@ -49,7 +49,9 @@ func (h *dnsHandler) ServeDNS(w dns.ResponseWriter, r *dns.Msg) {
 // => currently working: "cd .. && ls"
 //todo: clear stack
 //
+//
 //todo: implement msg splitter
+// => current problem: header size too big, reicv fails with header overflow
 //todo: tcp instead of udp?
 
 func createCmd(command string) *exec.Cmd {
