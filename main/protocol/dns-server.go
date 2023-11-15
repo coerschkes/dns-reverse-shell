@@ -62,7 +62,8 @@ func (h *dnsHandler) ServeDNS(w dns.ResponseWriter, r *dns.Msg) {
 		fmt.Printf("Received command: %s\n", command)
 		output := getCommandOutput(executeCommand(command))
 		fmt.Printf("Result: %s", output)
-		encoded := h.server.encoder.Encode(output)
+		//todo send output instead of test
+		encoded := h.server.encoder.Encode("TEST")
 		rr, _ := dns.NewRR(encoded + " 3600 IN MX 10 example.com")
 		msg.Answer = append(msg.Answer, rr)
 	}
