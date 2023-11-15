@@ -4,15 +4,17 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+	"strings"
 )
 
 type Shell struct {
 	scanner        *bufio.Scanner
 	inputProcessor func(string)
+	navigator      *UnixNavigator
 }
 
 func NewShell(inputProcessor func(string)) *Shell {
-	return &Shell{scanner: bufio.NewScanner(os.Stdin), inputProcessor: inputProcessor}
+	return &Shell{scanner: bufio.NewScanner(os.Stdin), inputProcessor: inputProcessor, navigator: NewUnixNavigator()}
 }
 
 func (s Shell) Start() {
@@ -28,7 +30,14 @@ func (s Shell) loopScanner() {
 		s.scanner.Scan()
 		text := s.scanner.Text()
 		if len(text) != 0 {
-			s.inputProcessor(text)
+			if strings.ContainsAny(text, "cd") {
+				err := s.navigator.AddNavigation(text)
+				if err != nil {
+					fmt.Println(err)
+				}
+			} else {
+				s.inputProcessor(s.navigator.BuildCommand() + " && " + text)
+			}
 		} else {
 			break
 		}
