@@ -10,14 +10,11 @@ func main() {
 	dnsServer.Serve()
 }
 
-//todo create shell impl -> have command buffer/stack? prefix? -> exec command "cd .., ls" for instance
-// => currently working: "cd .. && ls"
-//todo: clear stack
-//todo: navigation stack -> only for navigation!
-//
-//
-//todo: implement msg splitter
-// => current problem: header size too big, reicv fails with header overflow
-//todo: tcp instead of udp?
+/*
+todo revert master/slave:
+	poll every x second to "dns server(master)". master has a command "stack". when polled retrieve command from stack
+	execute in client. when stack ist empty, return some sort of idle
 
-//todo: revert master/slave?
+todo implement msg splitter:
+	current problem: header size too big, reicv fails with header overflow
+*/
