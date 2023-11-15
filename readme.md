@@ -47,4 +47,6 @@ todo: add usage
 - [ ] Polling
 - [ ] Command chaining
 - [ ] Multiple sessions
+- [ ] Windows navigation support
+- [ ] Use encryption for payload
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
