@@ -29,18 +29,34 @@ func (s Shell) loopScanner() {
 	for {
 		s.scanner.Scan()
 		text := s.scanner.Text()
-		if len(text) != 0 {
-			if strings.ContainsAny(text, "cd") {
-				err := s.navigator.AddNavigation(text)
-				if err != nil {
-					fmt.Println(err)
-				}
-			} else {
-				s.inputProcessor(s.navigator.BuildCommand() + " && " + text)
-			}
-		} else {
+		if len(text) == 0 {
 			break
 		}
+		s.handleInput(text)
+	}
+}
+
+func (s Shell) handleInput(text string) {
+	if strings.ContainsAny(text, "cd") {
+		s.handleNavigationCommand(text)
+	} else {
+		s.processInput(text)
+	}
+}
+
+func (s Shell) handleNavigationCommand(text string) {
+	err := s.navigator.AddNavigation(text)
+	if err != nil {
+		fmt.Println(err)
+	}
+}
+
+func (s Shell) processInput(text string) {
+	navigation := s.navigator.BuildCommand()
+	if len(navigation) != 0 {
+		s.inputProcessor(s.navigator.BuildCommand() + " && " + text)
+	} else {
+		s.inputProcessor(text)
 	}
 }
 
