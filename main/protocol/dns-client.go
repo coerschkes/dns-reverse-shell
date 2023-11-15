@@ -19,6 +19,7 @@ func (d DNSClient) SendMessage(message string) {
 	m := d.createMessage(d.encoder.Encode(message))
 
 	c := new(dns.Client)
+	c.Net = "tcp"
 	in, _, err := c.Exchange(m, d.address)
 	if err != nil {
 		fmt.Println(err)

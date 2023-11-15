@@ -29,7 +29,7 @@ func NewDnsServer(port string, encoder encoder.StringEncoder) *DNSServer {
 }
 
 func (s DNSServer) Serve() {
-	server := s.createUdpServer()
+	server := s.createServer()
 
 	fmt.Println("Starting DNS server on port 8090")
 	err := server.ListenAndServe()
@@ -38,12 +38,11 @@ func (s DNSServer) Serve() {
 	}
 }
 
-func (s DNSServer) createUdpServer() *dns.Server {
+func (s DNSServer) createServer() *dns.Server {
 	server := &dns.Server{
 		Addr:      ":" + s.port,
-		Net:       "udp",
+		Net:       "tcp",
 		Handler:   s.handler,
-		UDPSize:   65535,
 		ReusePort: true,
 	}
 	return server
