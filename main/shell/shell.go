@@ -54,7 +54,7 @@ func (s Shell) handleNavigationCommand(text string) {
 func (s Shell) processInput(text string) {
 	navigation := s.navigator.BuildCommand()
 	if len(navigation) != 0 {
-		s.inputProcessor(s.navigator.BuildCommand() + " && " + text)
+		s.inputProcessor(navigation + " && " + text)
 	} else {
 		s.inputProcessor(text)
 	}
