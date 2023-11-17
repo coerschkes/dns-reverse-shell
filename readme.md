@@ -49,4 +49,5 @@ todo: add usage
 - [ ] Multiple sessions
 - [ ] Windows navigation support
 - [ ] Use encryption for payload
+- [ ] Autostart
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
