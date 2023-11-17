@@ -45,3 +45,38 @@ func TestSimpleMessageSplitter_Split(t *testing.T) {
 		})
 	}
 }
+
+func TestSimpleMessageSplitter_Collect(t *testing.T) {
+	type args struct {
+		message string
+	}
+	tests := []struct {
+		name         string
+		args         args
+		wantedLength int
+	}{
+		{
+			name: "split simple message (less than 60 bytes)",
+			args: args{message: "simple message"},
+		},
+		{
+			name: "split message (more than 60 bytes)",
+			args: args{message: "TEST123456789_123456789_123456789_123456789_1_1234567890"},
+		},
+		{
+			name: "complicated message (more than 60 bytes)",
+			args: args{message: "TEST123456789_123456789_123456789_123456789_1_1234567890!(%)/&§)%&&?&?`*'*`$&(      \n\n kjalöfjahsklghalsdög"},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			s := SimpleMessageSplitter{}
+			encodedMessage := encoder.NewBase64Encoder().Encode(tt.args.message)
+			splitMessage := s.Split(encodedMessage)
+			collectedMessage := s.Collect(splitMessage)
+			if collectedMessage != encodedMessage {
+				t.Errorf("Collect() = %v, want %v", collectedMessage, encodedMessage)
+			}
+		})
+	}
+}
