@@ -19,6 +19,7 @@ func NewShell(inputProcessor func(string)) *Shell {
 
 func (s Shell) Start() {
 	fmt.Println("Enter command. Empty string exits the program")
+	s.printPrompt()
 	s.loopScanner()
 	if s.scanner.Err() != nil {
 		s.handleScannerError()
@@ -49,6 +50,7 @@ func (s Shell) handleNavigationCommand(text string) {
 	if err != nil {
 		fmt.Println(err)
 	}
+	s.printPrompt()
 }
 
 func (s Shell) processInput(text string) {
@@ -56,8 +58,18 @@ func (s Shell) processInput(text string) {
 	if len(navigation) != 0 {
 		s.inputProcessor(navigation + " && " + text)
 	} else {
-		s.inputProcessor(text)
+		s.inputProcessor(text + "\n" + navigation)
 	}
+	s.printPrompt()
+}
+
+func (s Shell) printPrompt() {
+	path := s.navigator.navStack.Build()
+	if len(path) != 0 {
+		fmt.Print(path + " > ")
+		return
+	}
+	fmt.Print("> ")
 }
 
 func (s Shell) handleScannerError() {
