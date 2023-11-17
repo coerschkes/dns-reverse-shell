@@ -1,4 +1,4 @@
-package shell
+package navigation
 
 import (
 	"errors"
@@ -7,13 +7,13 @@ import (
 )
 
 type UnixNavigator struct {
-	navStack *NavigationStack
+	navStack *navigationStack
 }
 
 //todo: implement up/downwards navigation with "cd .." instead of putting the ".." on the navigation stack
 
 func NewUnixNavigator() *UnixNavigator {
-	return &UnixNavigator{navStack: NewNavigationStack()}
+	return &UnixNavigator{navStack: newNavigationStack()}
 }
 
 func (n UnixNavigator) AddNavigationStep(navCommand string) error {
@@ -21,12 +21,16 @@ func (n UnixNavigator) AddNavigationStep(navCommand string) error {
 		return errors.New("invalid command '" + navCommand + "'")
 	}
 	navPath := n.getNavigationPath(navCommand)
-	n.navStack.Push(navPath)
+	n.navStack.push(navPath)
 	return nil
 }
 
+func (n UnixNavigator) BuildPath() string {
+	return n.navStack.build()
+}
+
 func (n UnixNavigator) BuildCommand() string {
-	path := n.navStack.Build()
+	path := n.BuildPath()
 	if path == "" {
 		return path
 	}

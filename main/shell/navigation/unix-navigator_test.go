@@ -1,4 +1,4 @@
-package shell
+package navigation
 
 import (
 	"errors"
@@ -24,7 +24,7 @@ func TestNavigator_AddNavigation(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			n := UnixNavigator{
-				navStack: NewNavigationStack(),
+				navStack: newNavigationStack(),
 			}
 			if err := n.AddNavigationStep(tt.args.navCommand); err == nil && tt.err != nil {
 				t.Errorf("BuildCommand() = %v, want %v", err, tt.err)
@@ -52,7 +52,7 @@ func TestNavigator_BuildCommand(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			n := UnixNavigator{
-				navStack: NewNavigationStack(),
+				navStack: newNavigationStack(),
 			}
 			if tt.args.navCommand != "" {
 				err := n.AddNavigationStep(tt.args.navCommand)
@@ -83,7 +83,7 @@ func TestNavigator_getNavigationPath(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			n := UnixNavigator{
-				navStack: NewNavigationStack(),
+				navStack: newNavigationStack(),
 			}
 			if got := n.getNavigationPath(tt.args.navCommand); got != tt.want {
 				t.Errorf("getNavigationPath() = %v, want %v", got, tt.want)
@@ -113,7 +113,7 @@ func TestNavigator_isValidCommand(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			n := UnixNavigator{
-				navStack: NewNavigationStack(),
+				navStack: newNavigationStack(),
 			}
 			if got := n.isValidCommand(tt.args.navCommand); got != tt.want {
 				t.Errorf("isNavigationHome() = %v, want %v", got, tt.want)

@@ -1,4 +1,4 @@
-package shell
+package navigation
 
 import (
 	"testing"
@@ -20,11 +20,11 @@ func TestNavigationStack_Push(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			n := NewNavigationStack()
-			n.Push(tt.path)
+			n := newNavigationStack()
+			n.push(tt.path)
 
 			if n.stack.Len() != tt.wantedLen {
-				t.Errorf("Push() = %v, want %v", n.Len(), tt.wantedLen)
+				t.Errorf("Push() = %v, want %v", n.len(), tt.wantedLen)
 			}
 			for i := 0; i < n.stack.Len()+1; i++ {
 				stackValue := n.stack.Pop().(string)
@@ -51,10 +51,10 @@ func TestNavigationStack_Build(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			n := NewNavigationStack()
-			n.Push(tt.path)
-			if got := n.Build(); got != tt.want {
-				t.Errorf("Build() = %v, want %v", got, tt.want)
+			n := newNavigationStack()
+			n.push(tt.path)
+			if got := n.build(); got != tt.want {
+				t.Errorf("build() = %v, want %v", got, tt.want)
 			}
 		})
 	}
@@ -75,12 +75,12 @@ func TestNavigationStack_BuildWithPersistence(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			n := NewNavigationStack()
-			n.Push(tt.path)
-			n.Build()
-			n.Push(tt.path)
-			if got := n.Build(); got != tt.want {
-				t.Errorf("Build() = %v, want %v", got, tt.want)
+			n := newNavigationStack()
+			n.push(tt.path)
+			n.build()
+			n.push(tt.path)
+			if got := n.build(); got != tt.want {
+				t.Errorf("build() = %v, want %v", got, tt.want)
 			}
 		})
 	}
@@ -97,10 +97,10 @@ func TestNavigationStack_Len(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			n := NewNavigationStack()
-			n.Push(tt.path)
-			if got := n.Len(); got != tt.want {
-				t.Errorf("Len() = %v, want %v", got, tt.want)
+			n := newNavigationStack()
+			n.push(tt.path)
+			if got := n.len(); got != tt.want {
+				t.Errorf("len() = %v, want %v", got, tt.want)
 			}
 		})
 	}
@@ -116,12 +116,12 @@ func TestNavigationStack_Clear(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			n := NewNavigationStack()
-			n.Push(tt.path)
-			n.Clear()
+			n := newNavigationStack()
+			n.push(tt.path)
+			n.clear()
 
-			if n.Len() != 0 {
-				t.Errorf("Clear() = %v, want 0", n.Len())
+			if n.len() != 0 {
+				t.Errorf("clear() = %v, want 0", n.len())
 			}
 
 		})
@@ -143,7 +143,7 @@ func TestNavigationStack_isAbsolute(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			n := NewNavigationStack()
+			n := newNavigationStack()
 			if got := n.isAbsolute(tt.path); got != tt.want {
 				t.Errorf("isAbsolute() = %v, want %v", got, tt.want)
 			}
@@ -167,7 +167,7 @@ func TestNavigationStack_isHome(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			n := NewNavigationStack()
+			n := newNavigationStack()
 			if got := n.isHome(tt.path); got != tt.want {
 				t.Errorf("isHome() = %v, want %v", got, tt.want)
 			}

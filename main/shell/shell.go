@@ -2,6 +2,7 @@ package shell
 
 import (
 	"bufio"
+	"dns-shellcode/main/shell/navigation"
 	"fmt"
 	"os"
 	"strings"
@@ -10,11 +11,11 @@ import (
 type Shell struct {
 	scanner        *bufio.Scanner
 	inputProcessor func(string)
-	navigator      *UnixNavigator
+	navigator      *navigation.UnixNavigator
 }
 
 func NewShell(inputProcessor func(string)) *Shell {
-	return &Shell{scanner: bufio.NewScanner(os.Stdin), inputProcessor: inputProcessor, navigator: NewUnixNavigator()}
+	return &Shell{scanner: bufio.NewScanner(os.Stdin), inputProcessor: inputProcessor, navigator: navigation.NewUnixNavigator()}
 }
 
 func (s Shell) Start() {
@@ -54,17 +55,17 @@ func (s Shell) handleNavigationCommand(text string) {
 }
 
 func (s Shell) processInput(text string) {
-	navigation := s.navigator.BuildCommand()
-	if len(navigation) != 0 {
-		s.inputProcessor(navigation + " && " + text)
+	navCommand := s.navigator.BuildCommand()
+	if len(navCommand) != 0 {
+		s.inputProcessor(navCommand + " && " + text)
 	} else {
-		s.inputProcessor(text + "\n" + navigation)
+		s.inputProcessor(text + "\n" + navCommand)
 	}
 	s.printPrompt()
 }
 
 func (s Shell) printPrompt() {
-	path := s.navigator.navStack.Build()
+	path := s.navigator.BuildPath()
 	if len(path) != 0 {
 		fmt.Print(path + " > ")
 		return

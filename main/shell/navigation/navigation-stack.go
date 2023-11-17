@@ -1,19 +1,19 @@
-package shell
+package navigation
 
 import (
 	"github.com/golang-collections/collections/stack"
 	"strings"
 )
 
-type NavigationStack struct {
+type navigationStack struct {
 	stack *stack.Stack
 }
 
-func NewNavigationStack() *NavigationStack {
-	return &NavigationStack{stack: stack.New()}
+func newNavigationStack() *navigationStack {
+	return &navigationStack{stack: stack.New()}
 }
 
-func (n *NavigationStack) Push(path string) {
+func (n *navigationStack) push(path string) {
 	n.handleExtraNavigation(path)
 	splitNavPath := strings.Split(path, "/")
 	for i := range splitNavPath {
@@ -25,44 +25,44 @@ func (n *NavigationStack) Push(path string) {
 	}
 }
 
-func (n *NavigationStack) Clear() {
+func (n *navigationStack) clear() {
 	for n.stack.Len() > 0 {
 		n.stack.Pop()
 	}
 }
 
-func (n *NavigationStack) Len() int {
+func (n *navigationStack) len() int {
 	return n.stack.Len()
 }
 
-func (n *NavigationStack) Build() string {
-	if n.Len() == 0 {
+func (n *navigationStack) build() string {
+	if n.len() == 0 {
 		return ""
 	} else {
 		return n.calculatePath()
 	}
 }
 
-func (n *NavigationStack) handleExtraNavigation(path string) {
+func (n *navigationStack) handleExtraNavigation(path string) {
 	if n.isAbsolute(path) {
-		n.Clear()
+		n.clear()
 		n.stack.Push("/")
 	} else if n.isHome(path) {
-		n.Clear()
+		n.clear()
 	}
 }
 
-func (n *NavigationStack) isAbsolute(path string) bool {
+func (n *navigationStack) isAbsolute(path string) bool {
 	trimmedPath := strings.ReplaceAll(path, " ", "")
 	return strings.HasPrefix(trimmedPath, "/")
 }
 
-func (n *NavigationStack) isHome(path string) bool {
+func (n *navigationStack) isHome(path string) bool {
 	trimmedPath := strings.ReplaceAll(path, " ", "")
 	return trimmedPath == "~" || trimmedPath == "~/"
 }
 
-func (n *NavigationStack) calculatePath() string {
+func (n *navigationStack) calculatePath() string {
 	navigationPath := ""
 	tmpStack := n.copyInternalStack()
 	for tmpStack.Len() > 0 {
@@ -72,7 +72,7 @@ func (n *NavigationStack) calculatePath() string {
 	return navigationPath
 }
 
-func (n *NavigationStack) copyInternalStack() *stack.Stack {
+func (n *navigationStack) copyInternalStack() *stack.Stack {
 	stackBuffer := stack.New()
 	tmpStack := stack.New()
 	n.revertInternalStack()
@@ -85,7 +85,7 @@ func (n *NavigationStack) copyInternalStack() *stack.Stack {
 	return tmpStack
 }
 
-func (n *NavigationStack) revertInternalStack() {
+func (n *navigationStack) revertInternalStack() {
 	stackBuffer := stack.New()
 	for n.stack.Len() > 0 {
 		stackBuffer.Push(n.stack.Pop())
