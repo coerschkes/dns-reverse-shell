@@ -45,7 +45,7 @@ func (s Shell) handleInput(text string) {
 }
 
 func (s Shell) handleNavigationCommand(text string) {
-	err := s.navigator.AddNavigation(text)
+	err := s.navigator.AddNavigationStep(text)
 	if err != nil {
 		fmt.Println(err)
 	}

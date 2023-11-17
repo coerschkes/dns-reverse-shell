@@ -2,49 +2,35 @@ package shell
 
 import (
 	"errors"
-	"github.com/golang-collections/collections/stack"
+	"regexp"
 	"strings"
 )
 
 type UnixNavigator struct {
-	navigationStack *stack.Stack
+	navStack *NavigationStack
 }
+
+//todo: implement up/downwards navigation with "cd .." instead of putting the ".." on the navigation stack
 
 func NewUnixNavigator() *UnixNavigator {
-	return &UnixNavigator{navigationStack: stack.New()}
+	return &UnixNavigator{navStack: NewNavigationStack()}
 }
 
-func (n UnixNavigator) AddNavigation(navCommand string) error {
+func (n UnixNavigator) AddNavigationStep(navCommand string) error {
 	if !n.isValidCommand(navCommand) {
 		return errors.New("invalid command '" + navCommand + "'")
 	}
-	if n.isNavigationHome(navCommand) || n.isNavigationAbsolute(navCommand) {
-		n.clearNavigationStack()
-	}
 	navPath := n.getNavigationPath(navCommand)
-	n.pushPathToStack(navPath)
+	n.navStack.Push(navPath)
 	return nil
 }
 
 func (n UnixNavigator) BuildCommand() string {
-	navigationPath := ""
-	if n.navigationStack.Len() == 0 {
-		return navigationPath
+	path := n.navStack.Build()
+	if path == "" {
+		return path
 	}
-	for n.navigationStack.Len() > 0 {
-		navigationPath = n.navigationStack.Pop().(string) + navigationPath
-	}
-	return "cd " + navigationPath
-}
-
-func (n UnixNavigator) isNavigationAbsolute(command string) bool {
-	trimmedCommand := strings.ReplaceAll(command, " ", "")
-	return strings.HasPrefix(trimmedCommand, "cd/")
-}
-
-func (n UnixNavigator) isNavigationHome(command string) bool {
-	trimmedCommand := strings.ReplaceAll(command, " ", "")
-	return strings.HasPrefix(trimmedCommand, "cd~")
+	return "cd " + path
 }
 
 func (n UnixNavigator) getNavigationPath(command string) string {
@@ -52,27 +38,8 @@ func (n UnixNavigator) getNavigationPath(command string) string {
 	return splitN[1]
 }
 
-func (n UnixNavigator) pushPathToStack(navPath string) {
-	if n.isNavigationAbsolute(navPath) {
-		n.navigationStack.Push("/")
-	}
-	splitNavPath := strings.Split(navPath, "/")
-	for i := range splitNavPath {
-		n.navigationStack.Push(splitNavPath[i])
-		n.navigationStack.Push("/")
-	}
-}
-
-func (n UnixNavigator) clearNavigationStack() {
-	for n.navigationStack.Len() > 0 {
-		n.navigationStack.Pop()
-	}
-}
-
 func (n UnixNavigator) isValidCommand(command string) bool {
-	trimmedCommand := strings.ReplaceAll(command, " ", "")
-	noEmptyCommand := strings.Compare("cd", trimmedCommand) != 0
-	beginsWithCd := strings.HasPrefix(trimmedCommand, "cd")
-	notContainingChains := !strings.ContainsAny(trimmedCommand, "&&")
-	return beginsWithCd && noEmptyCommand && notContainingChains
+	startsWithCd, _ := regexp.MatchString("cd .+", command)
+	notContainingChains := !strings.ContainsAny(command, "&&")
+	return startsWithCd && notContainingChains
 }
