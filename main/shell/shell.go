@@ -2,7 +2,7 @@ package shell
 
 import (
 	"bufio"
-	"dns-shellcode/main/shell/navigation"
+	"dns-reverse-shell/main/shell/navigation"
 	"fmt"
 	"os"
 	"strings"

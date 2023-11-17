@@ -1,9 +1,9 @@
 package main
 
 import (
-	"dns-shellcode/main/encoder"
-	"dns-shellcode/main/protocol"
-	shell "dns-shellcode/main/shell"
+	"dns-reverse-shell/main/encoder"
+	"dns-reverse-shell/main/protocol"
+	shell "dns-reverse-shell/main/shell"
 )
 
 func main() {

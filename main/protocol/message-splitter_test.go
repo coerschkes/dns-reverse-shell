@@ -1,7 +1,7 @@
 package protocol
 
 import (
-	"dns-shellcode/main/encoder"
+	"dns-reverse-shell/main/encoder"
 	"testing"
 )
 

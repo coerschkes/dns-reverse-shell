@@ -1,4 +1,4 @@
-module dns-shellcode
+module dns-reverse-shell
 
 go 1.21
 
