@@ -45,7 +45,7 @@ todo: add usage
 
 - [X] Simple navigation
 - [X] Dns communication
-- [ ] Message splitter
+- [X] Message splitter
 - [ ] Polling (if idle only poll twice per minute to prevent flooding)
 - [ ] Command chaining
 - [ ] Multiple sessions
