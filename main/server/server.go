@@ -1,8 +1,8 @@
 package main
 
 import (
-	"dns-shellcode/main/encoder"
-	"dns-shellcode/main/protocol"
+	"dns-reverse-shell/main/encoder"
+	"dns-reverse-shell/main/protocol"
 )
 
 func main() {

@@ -2,6 +2,7 @@ package shell
 
 import (
 	"bufio"
+	"dns-reverse-shell/main/shell/navigation"
 	"fmt"
 	"os"
 	"strings"
@@ -10,15 +11,16 @@ import (
 type Shell struct {
 	scanner        *bufio.Scanner
 	inputProcessor func(string)
-	navigator      *UnixNavigator
+	navigator      *navigation.UnixNavigator
 }
 
 func NewShell(inputProcessor func(string)) *Shell {
-	return &Shell{scanner: bufio.NewScanner(os.Stdin), inputProcessor: inputProcessor, navigator: NewUnixNavigator()}
+	return &Shell{scanner: bufio.NewScanner(os.Stdin), inputProcessor: inputProcessor, navigator: navigation.NewUnixNavigator()}
 }
 
 func (s Shell) Start() {
 	fmt.Println("Enter command. Empty string exits the program")
+	s.printPrompt()
 	s.loopScanner()
 	if s.scanner.Err() != nil {
 		s.handleScannerError()
@@ -45,19 +47,30 @@ func (s Shell) handleInput(text string) {
 }
 
 func (s Shell) handleNavigationCommand(text string) {
-	err := s.navigator.AddNavigation(text)
+	err := s.navigator.AddNavigationStep(text)
 	if err != nil {
 		fmt.Println(err)
 	}
+	s.printPrompt()
 }
 
 func (s Shell) processInput(text string) {
-	navigation := s.navigator.BuildCommand()
-	if len(navigation) != 0 {
-		s.inputProcessor(s.navigator.BuildCommand() + " && " + text)
+	navCommand := s.navigator.BuildCommand()
+	if len(navCommand) != 0 {
+		s.inputProcessor(navCommand + " && " + text)
 	} else {
-		s.inputProcessor(text)
+		s.inputProcessor(text + "\n" + navCommand)
 	}
+	s.printPrompt()
+}
+
+func (s Shell) printPrompt() {
+	path := s.navigator.BuildPath()
+	if len(path) != 0 {
+		fmt.Print(path + " > ")
+		return
+	}
+	fmt.Print("> ")
 }
 
 func (s Shell) handleScannerError() {

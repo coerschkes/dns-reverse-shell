@@ -32,10 +32,12 @@ This is done by submitting the payload and commands as dns queries. To prevent a
 split into multiple queries.
 
 ## Getting Started
+
 todo: add instructions
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 ## Usage
+
 todo: add usage
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -43,10 +45,12 @@ todo: add usage
 
 - [X] Simple navigation
 - [X] Dns communication
-- [ ] Message splitter
-- [ ] Polling
+- [X] Message splitter
+- [ ] Polling (if idle only poll twice per minute to prevent flooding)
 - [ ] Command chaining
 - [ ] Multiple sessions
 - [ ] Windows navigation support
 - [ ] Use encryption for payload
+- [ ] Autostart
+
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
