@@ -20,12 +20,11 @@ type DNSServer struct {
 	encoder         encoder.StringEncoder
 	handler         *dnsHandler
 	messageSplitter MessageSplitter
-	idleTimeout     int
 	queue           queue.Queue
 }
 
-func NewDnsServer(port string, encoder encoder.StringEncoder, idleTimeout int) *DNSServer {
-	d := &DNSServer{port: port, encoder: encoder, idleTimeout: idleTimeout, messageSplitter: NewSimpleMessageSplitter(), queue: *queue.New()}
+func NewDnsServer(port string, encoder encoder.StringEncoder) *DNSServer {
+	d := &DNSServer{port: port, encoder: encoder, messageSplitter: NewSimpleMessageSplitter(), queue: *queue.New()}
 	d.handler = newDnsHandler(d)
 	return d
 }
@@ -53,7 +52,7 @@ func (s DNSServer) createServer() *dns.Server {
 func (s DNSServer) QueueCommand(command string) {
 	//todo: handle empty command
 	//todo: handle close command -> terminate the target client
-	//todo: handle quit command -> quit server side shell only
+	//todo: handle quit command -> quit server side shell only, initiate sleep idle
 	s.queue.Enqueue(command)
 }
 

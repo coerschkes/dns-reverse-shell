@@ -7,7 +7,7 @@ import (
 )
 
 func main() {
-	dnsServer := protocol.NewDnsServer("8090", encoder.NewBase64Encoder(), 10)
+	dnsServer := protocol.NewDnsServer("8090", encoder.NewBase64Encoder())
 	dnsServer.Serve()
 	s := shell.NewShell(dnsServer.QueueCommand)
 	go s.Start()
