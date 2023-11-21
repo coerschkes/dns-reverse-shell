@@ -59,7 +59,7 @@ func (s Shell) processInput(text string) {
 	if len(navCommand) != 0 {
 		s.inputProcessor(navCommand + " && " + text)
 	} else {
-		s.inputProcessor(text + "\n" + navCommand)
+		s.inputProcessor(text)
 	}
 	s.printPrompt()
 }
