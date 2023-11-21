@@ -9,13 +9,13 @@ import (
 )
 
 type Shell struct {
-	scanner        *bufio.Scanner
-	inputProcessor func(string)
-	navigator      *navigation.UnixNavigator
+	scanner    *bufio.Scanner
+	callbackFn func(string)
+	navigator  *navigation.UnixNavigator
 }
 
-func NewShell(inputProcessor func(string)) *Shell {
-	return &Shell{scanner: bufio.NewScanner(os.Stdin), inputProcessor: inputProcessor, navigator: navigation.NewUnixNavigator()}
+func NewShell(callbackFn func(string)) *Shell {
+	return &Shell{scanner: bufio.NewScanner(os.Stdin), callbackFn: callbackFn, navigator: navigation.NewUnixNavigator()}
 }
 
 func (s Shell) Start() {
@@ -42,7 +42,7 @@ func (s Shell) handleInput(text string) {
 	if strings.ContainsAny(text, "cd") {
 		s.handleNavigationCommand(text)
 	} else {
-		s.processInput(text)
+		s.callback(text)
 	}
 }
 
@@ -54,12 +54,12 @@ func (s Shell) handleNavigationCommand(text string) {
 	s.printPrompt()
 }
 
-func (s Shell) processInput(text string) {
+func (s Shell) callback(text string) {
 	navCommand := s.navigator.BuildCommand()
 	if len(navCommand) != 0 {
-		s.inputProcessor(navCommand + " && " + text)
+		s.callbackFn(navCommand + " && " + text)
 	} else {
-		s.inputProcessor(text)
+		s.callbackFn(text)
 	}
 	s.printPrompt()
 }
