@@ -11,6 +11,7 @@ type UnixNavigator struct {
 }
 
 //todo: implement up/downwards navigation with "cd .." instead of putting the ".." on the navigation stack
+//todo: detect current directory and navigate relative from there
 
 func NewUnixNavigator() *UnixNavigator {
 	return &UnixNavigator{navStack: newNavigationStack()}
