@@ -20,11 +20,12 @@ type DNSServer struct {
 	encoder         encoder.StringEncoder
 	handler         *dnsHandler
 	messageSplitter MessageSplitter
-	queue           queue.Queue
+	queue           *queue.Queue
+	callbackChan    chan bool
 }
 
-func NewDnsServer(port string, encoder encoder.StringEncoder) *DNSServer {
-	d := &DNSServer{port: port, encoder: encoder, messageSplitter: NewSimpleMessageSplitter(), queue: *queue.New()}
+func NewDnsServer(port string, encoder encoder.StringEncoder, callbackChan chan bool) *DNSServer {
+	d := &DNSServer{port: port, encoder: encoder, messageSplitter: NewSimpleMessageSplitter(), queue: queue.New(), callbackChan: callbackChan}
 	d.handler = newDnsHandler(d)
 	return d
 }
@@ -92,12 +93,15 @@ func (h *dnsHandler) ServeDNS(w dns.ResponseWriter, r *dns.Msg) {
 	msg := h.server.createAnswerMessage(r)
 	for _, question := range r.Question {
 		var command string
-		if question.Name == "poll" {
+		if question.Name == "poll." {
 			command = h.server.handlePolling()
-		} else {
-			//handle answer -> print
+		} else if question.Name == "answer." || question.Name == "error." {
+			collect := h.server.messageSplitter.Collect(r.Extra)
+			fmt.Println(h.server.encoder.Decode(collect))
+			h.server.callbackChan <- false
 			command = "ok"
-			//answer ok -> resend on client side if not ok or error?
+		} else {
+			command = "idle"
 		}
 		msg.Answer = h.server.buildAnswer(command)
 	}

@@ -12,10 +12,11 @@ type Shell struct {
 	scanner    *bufio.Scanner
 	callbackFn func(string)
 	navigator  *navigation.UnixNavigator
+	wait       chan bool
 }
 
-func NewShell(callbackFn func(string)) *Shell {
-	return &Shell{scanner: bufio.NewScanner(os.Stdin), callbackFn: callbackFn, navigator: navigation.NewUnixNavigator()}
+func NewShell(callbackFn func(string), wait chan bool) *Shell {
+	return &Shell{scanner: bufio.NewScanner(os.Stdin), callbackFn: callbackFn, navigator: navigation.NewUnixNavigator(), wait: wait}
 }
 
 func (s Shell) Start() {
@@ -39,7 +40,7 @@ func (s Shell) loopScanner() {
 }
 
 func (s Shell) handleInput(text string) {
-	if strings.ContainsAny(text, "cd") {
+	if strings.Contains(text, "cd") {
 		s.handleNavigationCommand(text)
 	} else {
 		s.callback(text)
@@ -61,6 +62,8 @@ func (s Shell) callback(text string) {
 	} else {
 		s.callbackFn(text)
 	}
+	println("waiting for answer..\n")
+	<-s.wait
 	s.printPrompt()
 }
 
