@@ -32,37 +32,33 @@ func NewDnsServer(port string, encoder encoder.StringEncoder, callbackChan chan 
 
 func (s DNSServer) Serve() {
 	server := s.createServer()
-	fmt.Println("Starting Listener on port 8090")
+	fmt.Println("Starting Listener on port '" + s.port + "'")
 	err := server.ListenAndServe()
 	if err != nil {
 		fmt.Printf("Failed to start server: %s\n", err.Error())
 	}
 }
 
+func (s DNSServer) QueueCommand(command string) {
+	s.queue.Enqueue(command)
+}
+
+func (h *dnsHandler) ServeDNS(w dns.ResponseWriter, r *dns.Msg) {
+	msg := h.server.createAnswerMessage(r)
+	for _, question := range r.Question {
+		var command = h.server.switchCommand(question.Name, r)
+		msg.Extra = h.server.buildAnswer(command)
+	}
+	h.server.writeMessage(w, msg)
+}
+
 func (s DNSServer) createServer() *dns.Server {
-	server := &dns.Server{
+	return &dns.Server{
 		Addr:      ":" + s.port,
 		Net:       "tcp",
 		Handler:   s.handler,
 		ReusePort: true,
 	}
-	return server
-}
-
-func (s DNSServer) QueueCommand(command string) {
-	s.queue.Enqueue(command)
-}
-
-func (s DNSServer) handlePolling() string {
-	if s.queue.Len() != 0 {
-		return s.queue.Dequeue().(string)
-	}
-	return "idle"
-}
-
-func (s DNSServer) buildAnswer(command string) []dns.RR {
-	encoded := s.encoder.Encode(command)
-	return s.messageSplitter.Split(encoded)
 }
 
 func (s DNSServer) createAnswerMessage(r *dns.Msg) *dns.Msg {
@@ -72,29 +68,42 @@ func (s DNSServer) createAnswerMessage(r *dns.Msg) *dns.Msg {
 	return msg
 }
 
+func (s DNSServer) switchCommand(receivedQuestion string, r *dns.Msg) string {
+	var command = "idle"
+	switch receivedQuestion {
+	case "poll.":
+		command = s.handlePolling()
+	case "error.", "answer.":
+		command = s.handleCallback(r)
+	default:
+		command = "idle"
+	}
+	return command
+}
+
+func (s DNSServer) handlePolling() string {
+	if s.queue.Len() != 0 {
+		return s.queue.Dequeue().(string)
+	}
+	return "idle"
+}
+
+func (s DNSServer) handleCallback(r *dns.Msg) string {
+	collect := s.messageSplitter.Collect(r.Extra)
+	fmt.Println(s.encoder.Decode(collect))
+	s.callbackChan <- false
+	return "ok"
+}
+
+func (s DNSServer) buildAnswer(command string) []dns.RR {
+	encoded := s.encoder.Encode(command)
+	return s.messageSplitter.Split(encoded)
+}
+
 func (s DNSServer) writeMessage(w dns.ResponseWriter, msg *dns.Msg) {
 	err := w.WriteMsg(msg)
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
-}
-
-func (h *dnsHandler) ServeDNS(w dns.ResponseWriter, r *dns.Msg) {
-	msg := h.server.createAnswerMessage(r)
-	for _, question := range r.Question {
-		var command string
-		if question.Name == "poll." {
-			command = h.server.handlePolling()
-		} else if question.Name == "answer." || question.Name == "error." {
-			collect := h.server.messageSplitter.Collect(r.Extra)
-			fmt.Println(h.server.encoder.Decode(collect))
-			h.server.callbackChan <- false
-			command = "ok"
-		} else {
-			command = "idle"
-		}
-		msg.Extra = h.server.buildAnswer(command)
-	}
-	h.server.writeMessage(w, msg)
 }
