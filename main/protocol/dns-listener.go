@@ -7,6 +7,7 @@ import (
 	"github.com/miekg/dns"
 )
 
+// todo: wait for connection before console?
 type dnsHandler struct {
 	server *DNSServer
 }
@@ -35,7 +36,7 @@ func (s DNSServer) Serve() {
 	fmt.Println("Starting Listener on port '" + s.port + "'")
 	err := server.ListenAndServe()
 	if err != nil {
-		fmt.Printf("Failed to start server: %s\n", err.Error())
+		fmt.Printf("Failed to start listener: %s\n", err.Error())
 	}
 }
 

