@@ -8,8 +8,8 @@ import (
 
 func main() {
 	callbackChan := make(chan bool)
-	dnsServer := protocol.NewDnsServer("8090", encoder.NewBase64Encoder(), callbackChan)
-	s := shell.NewShell(dnsServer.QueueCommand, callbackChan)
+	listener := protocol.NewDnsServer("8090", encoder.NewBase64Encoder(), callbackChan)
+	s := shell.NewShell(listener.QueueCommand, callbackChan)
 	go s.Start()
-	dnsServer.Serve()
+	listener.Serve()
 }
