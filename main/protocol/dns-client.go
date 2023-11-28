@@ -67,7 +67,7 @@ func (d DNSClient) createMessage(commandType messageType, message string) *dns.M
 }
 
 func (d DNSClient) handleAnswer(answerMsg *dns.Msg) {
-	collect := d.messageSplitter.Collect(answerMsg.Answer)
+	collect := d.messageSplitter.Collect(answerMsg.Extra)
 	decoded := d.encoder.Decode(collect)
 	fmt.Println(decoded)
 	d.handleDecodedCommand(decoded)

