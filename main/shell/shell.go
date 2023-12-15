@@ -22,7 +22,6 @@ func NewShell(callbackFn func(string)) *Shell {
 func (s Shell) Start() {
 	fmt.Println("Waiting for connection..")
 	s.Wait()
-	fmt.Println("Enter command. Empty string exits the program")
 	s.printPrompt()
 	s.loopScanner()
 	if s.scanner.Err() != nil {
@@ -67,7 +66,7 @@ func (s Shell) handleNavigationCommand(text string) {
 
 func (s Shell) callback(text string) {
 	navCommand := s.navigator.BuildCommand()
-	if len(navCommand) != 0 {
+	if len(navCommand) != 0 && text != "exit" {
 		s.callbackFn(navCommand + " && " + text)
 	} else {
 		s.callbackFn(text)

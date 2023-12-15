@@ -1,11 +1,11 @@
 package main
 
 import (
-	"dns-reverse-shell/main/encoder"
-	"dns-reverse-shell/main/protocol"
+	"dns-reverse-shell/main/protocol/listener"
 )
 
+// todo: parameter port as command line arg
 func main() {
-	listener := protocol.NewDnsServer("8090", encoder.NewBase64Encoder())
-	listener.Initialize()
+	dnsListener := listener.NewDnsServer("8090")
+	dnsListener.Initialize()
 }
