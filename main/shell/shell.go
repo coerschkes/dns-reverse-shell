@@ -9,22 +9,32 @@ import (
 )
 
 type Shell struct {
-	scanner        *bufio.Scanner
-	inputProcessor func(string)
-	navigator      *navigation.UnixNavigator
+	scanner    *bufio.Scanner
+	callbackFn func(string)
+	navigator  *navigation.UnixNavigator
+	wait       chan bool
 }
 
-func NewShell(inputProcessor func(string)) *Shell {
-	return &Shell{scanner: bufio.NewScanner(os.Stdin), inputProcessor: inputProcessor, navigator: navigation.NewUnixNavigator()}
+func NewShell(callbackFn func(string)) *Shell {
+	return &Shell{scanner: bufio.NewScanner(os.Stdin), callbackFn: callbackFn, navigator: navigation.NewUnixNavigator(), wait: make(chan bool)}
 }
 
 func (s Shell) Start() {
-	fmt.Println("Enter command. Empty string exits the program")
+	s.navigator.Clear()
+	s.Wait()
 	s.printPrompt()
 	s.loopScanner()
 	if s.scanner.Err() != nil {
 		s.handleScannerError()
 	}
+}
+
+func (s Shell) Wait() {
+	<-s.wait
+}
+
+func (s Shell) Resume() {
+	s.wait <- false
 }
 
 func (s Shell) loopScanner() {
@@ -39,10 +49,10 @@ func (s Shell) loopScanner() {
 }
 
 func (s Shell) handleInput(text string) {
-	if strings.ContainsAny(text, "cd") {
+	if strings.Contains(text, "cd") {
 		s.handleNavigationCommand(text)
 	} else {
-		s.processInput(text)
+		s.callback(text)
 	}
 }
 
@@ -54,13 +64,15 @@ func (s Shell) handleNavigationCommand(text string) {
 	s.printPrompt()
 }
 
-func (s Shell) processInput(text string) {
+func (s Shell) callback(text string) {
 	navCommand := s.navigator.BuildCommand()
-	if len(navCommand) != 0 {
-		s.inputProcessor(navCommand + " && " + text)
+	if len(navCommand) != 0 && text != "exit" {
+		s.callbackFn(navCommand + " && " + text)
 	} else {
-		s.inputProcessor(text + "\n" + navCommand)
+		s.callbackFn(text)
 	}
+	println("waiting for answer..\n")
+	s.Wait()
 	s.printPrompt()
 }
 

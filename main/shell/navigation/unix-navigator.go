@@ -10,8 +10,6 @@ type UnixNavigator struct {
 	navStack *navigationStack
 }
 
-//todo: implement up/downwards navigation with "cd .." instead of putting the ".." on the navigation stack
-
 func NewUnixNavigator() *UnixNavigator {
 	return &UnixNavigator{navStack: newNavigationStack()}
 }
@@ -46,4 +44,8 @@ func (n UnixNavigator) isValidCommand(command string) bool {
 	startsWithCd, _ := regexp.MatchString("cd .+", command)
 	notContainingChains := !strings.ContainsAny(command, "&&")
 	return startsWithCd && notContainingChains
+}
+
+func (n UnixNavigator) Clear() {
+	n.navStack.clear()
 }
