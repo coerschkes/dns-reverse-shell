@@ -54,8 +54,9 @@ func (s *DNSServer) createServer() *dns.Server {
 func (h *dnsHandler) ServeDNS(w dns.ResponseWriter, r *dns.Msg) {
 	if !h.server.connectionHandler.hasConnection {
 		h.server.connectionHandler.setConnectionStatus(true)
-		//todo: print client addr here
-		fmt.Println("connected to {TBD}")
+		ip := h.server.messageHandler.DecodeAnswerMsg(r)
+		fmt.Println("connected to " + ip)
+		go h.server.commandHandler.(*listenerCommandHandler).initTimeout()
 		h.server.commandHandler.(*listenerCommandHandler).shell.Resume()
 	}
 	h.server.handleMessage(w, r)

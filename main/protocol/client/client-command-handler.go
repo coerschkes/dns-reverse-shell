@@ -38,11 +38,9 @@ func (c *clientCommandHandler) HandleCommand(value string, pollCallback func(), 
 	}
 }
 func (c *clientCommandHandler) Poll(callback func()) {
-	for {
-		c.sleep()
-		c.idleCounter++
-		callback()
-	}
+	c.sleep()
+	c.idleCounter++
+	callback()
 }
 
 func (c *clientCommandHandler) Answer(value string, callback func(string)) {

@@ -7,12 +7,14 @@ import (
 )
 
 type listenerCommandHandler struct {
-	shell *shell.Shell
-	queue *queue.Queue
+	shell           *shell.Shell
+	queue           *queue.Queue
+	timeoutExecutor *timeoutExecutor
 }
 
 func newListenerCommandHandler() *listenerCommandHandler {
 	handler := listenerCommandHandler{queue: queue.New()}
+	handler.timeoutExecutor = newTimeoutExecutor()
 	return &handler
 }
 
@@ -26,6 +28,7 @@ func (c *listenerCommandHandler) queueCommand(command string) {
 }
 
 func (c *listenerCommandHandler) HandleCommand(value string, pollCallback func(), answerCallback func(string), exitCallback func()) {
+	c.resetTimeout(exitCallback)
 	switch value {
 	case "poll.":
 		if c.queue.Len() == 0 {
@@ -56,9 +59,23 @@ func (c *listenerCommandHandler) Answer(value string, answerCallback func(string
 func (c *listenerCommandHandler) Exit(exitCallback func()) {
 	exitCallback()
 	fmt.Println("Connection closed")
+	c.timeoutExecutor.exit()
 	c.shell.Start()
 }
 
 func (c *listenerCommandHandler) Default(defaultCallback func(string)) {
 	defaultCallback(c.queue.Dequeue().(string))
+}
+
+func (c *listenerCommandHandler) resetTimeout(exitCallback func()) {
+	c.timeoutExecutor.reset()
+	if c.timeoutExecutor.callback != nil {
+		c.timeoutExecutor.callback = func() {
+			c.Exit(exitCallback)
+		}
+	}
+}
+
+func (c *listenerCommandHandler) initTimeout() {
+	go c.timeoutExecutor.start()
 }

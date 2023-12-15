@@ -20,6 +20,7 @@ func NewShell(callbackFn func(string)) *Shell {
 }
 
 func (s Shell) Start() {
+	s.navigator.Clear()
 	s.Wait()
 	s.printPrompt()
 	s.loopScanner()

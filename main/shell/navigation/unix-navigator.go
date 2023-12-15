@@ -45,3 +45,7 @@ func (n UnixNavigator) isValidCommand(command string) bool {
 	notContainingChains := !strings.ContainsAny(command, "&&")
 	return startsWithCd && notContainingChains
 }
+
+func (n UnixNavigator) Clear() {
+	n.navStack.clear()
+}
