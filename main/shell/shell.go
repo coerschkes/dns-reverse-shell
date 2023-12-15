@@ -20,7 +20,6 @@ func NewShell(callbackFn func(string)) *Shell {
 }
 
 func (s Shell) Start() {
-	fmt.Println("Waiting for connection..")
 	s.Wait()
 	s.printPrompt()
 	s.loopScanner()

