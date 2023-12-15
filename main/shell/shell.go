@@ -15,17 +15,27 @@ type Shell struct {
 	wait       chan bool
 }
 
-func NewShell(callbackFn func(string), wait chan bool) *Shell {
-	return &Shell{scanner: bufio.NewScanner(os.Stdin), callbackFn: callbackFn, navigator: navigation.NewUnixNavigator(), wait: wait}
+func NewShell(callbackFn func(string)) *Shell {
+	return &Shell{scanner: bufio.NewScanner(os.Stdin), callbackFn: callbackFn, navigator: navigation.NewUnixNavigator(), wait: make(chan bool)}
 }
 
 func (s Shell) Start() {
+	fmt.Println("Waiting for connection..")
+	s.Wait()
 	fmt.Println("Enter command. Empty string exits the program")
 	s.printPrompt()
 	s.loopScanner()
 	if s.scanner.Err() != nil {
 		s.handleScannerError()
 	}
+}
+
+func (s Shell) Wait() {
+	<-s.wait
+}
+
+func (s Shell) Resume() {
+	s.wait <- false
 }
 
 func (s Shell) loopScanner() {
@@ -63,7 +73,7 @@ func (s Shell) callback(text string) {
 		s.callbackFn(text)
 	}
 	println("waiting for answer..\n")
-	<-s.wait
+	s.Wait()
 	s.printPrompt()
 }
 

