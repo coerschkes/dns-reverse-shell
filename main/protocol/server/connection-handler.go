@@ -1,4 +1,4 @@
-package listener
+package server
 
 type connectionHandler struct {
 	hasConnection bool

