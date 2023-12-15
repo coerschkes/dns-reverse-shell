@@ -1,8 +1,8 @@
 package listener
 
 import (
-	"dns-reverse-shell/main/encoder"
 	"dns-reverse-shell/main/protocol"
+	"dns-reverse-shell/main/protocol/encoder"
 	"fmt"
 	"github.com/miekg/dns"
 )
