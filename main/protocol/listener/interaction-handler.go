@@ -26,34 +26,35 @@ func (m *interactionHandler) queueCommand(command string) {
 	m.queue.Enqueue(command)
 }
 
-func (m *interactionHandler) switchCommand(receivedQuestion string, answerCallback func() string, exitCallback func()) string {
+func (m *interactionHandler) handleCommand(receivedQuestion string, answerCallback func() string, exitCallback func()) string {
 	//todo: test if this works, before i set a var with the case result and returned it!
+	//todo idea: use message type here but cut off "." before
 	switch receivedQuestion {
 	case "poll.":
-		return m.handlePolling()
+		return m.polling()
 	case "answer.":
-		return m.handleAnswer(answerCallback())
+		return m.answer(answerCallback())
 	case "exit.":
-		m.handleExit(exitCallback)
+		m.exit(exitCallback)
 	default:
 	}
 	return "idle"
 }
 
-func (m *interactionHandler) handlePolling() string {
+func (m *interactionHandler) polling() string {
 	if m.queue.Len() != 0 {
 		return m.queue.Dequeue().(string)
 	}
 	return "idle"
 }
 
-func (m *interactionHandler) handleAnswer(answer string) string {
+func (m *interactionHandler) answer(answer string) string {
 	fmt.Println(answer)
 	m.shell.Resume()
 	return "ok"
 }
 
-func (m *interactionHandler) handleExit(connectionHandlerCallback func()) {
+func (m *interactionHandler) exit(connectionHandlerCallback func()) {
 	fmt.Println("Connection closed")
 	connectionHandlerCallback()
 	m.shell.Start()

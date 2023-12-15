@@ -63,7 +63,7 @@ func (h *dnsHandler) ServeDNS(w dns.ResponseWriter, r *dns.Msg) {
 func (s *DNSServer) createAnswerMessage(r *dns.Msg) *dns.Msg {
 	msg := s.messageHandler.CreateAnswerMessage(r)
 	for _, question := range r.Question {
-		command := s.interactionHandler.switchCommand(question.Name, func() string {
+		command := s.interactionHandler.handleCommand(question.Name, func() string {
 			return s.messageHandler.DecodeAnswerMsg(r)
 		}, func() { s.connectionHandler.hasConnection = false })
 		msg.Extra = s.messageHandler.BuildDNSExtra(command)

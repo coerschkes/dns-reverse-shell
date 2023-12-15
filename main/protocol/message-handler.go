@@ -14,10 +14,22 @@ func NewMessageHandler(encoder encoder.StringEncoder, messageSplitter MessageSpl
 	return &MessageHandler{encoder: encoder, messageSplitter: messageSplitter}
 }
 
-func (m MessageHandler) CreateAnswerMessage(r *dns.Msg) *dns.Msg {
+func (m MessageHandler) createMessage() *dns.Msg {
 	msg := new(dns.Msg)
+	return msg
+}
+
+func (m MessageHandler) CreateAnswerMessage(r *dns.Msg) *dns.Msg {
+	msg := m.createMessage()
 	msg.SetReply(r)
 	msg.Authoritative = true
+	return msg
+}
+
+func (m MessageHandler) CreateQuestionMessage(messageType string, message string) *dns.Msg {
+	msg := m.createMessage()
+	msg.SetQuestion(dns.Fqdn(messageType), dns.TypeA)
+	msg.Extra = m.BuildDNSExtra(message)
 	return msg
 }
 
