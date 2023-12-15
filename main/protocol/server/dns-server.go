@@ -50,7 +50,6 @@ func (s *DNSServer) createServer() *dns.Server {
 	}
 }
 
-// ServeDNS todo: connection clock with timeout after 10 sec -> connection false, print sth, shell.Start()
 func (h *dnsHandler) ServeDNS(w dns.ResponseWriter, r *dns.Msg) {
 	if !h.server.connectionHandler.hasConnection {
 		h.server.connectionHandler.setConnectionStatus(true)

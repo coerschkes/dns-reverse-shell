@@ -5,8 +5,6 @@ import (
 	"github.com/miekg/dns"
 )
 
-// todo: handle sending  big messages (like ifconfig)
-
 type MessageHandler struct {
 	encoder         encoder.StringEncoder
 	messageSplitter MessageSplitter
