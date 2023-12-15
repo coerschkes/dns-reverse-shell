@@ -2,10 +2,14 @@ package main
 
 import (
 	"dns-reverse-shell/main/protocol/listener"
+	"os"
 )
 
-// todo: parameter port as command line arg
 func main() {
-	dnsListener := listener.NewDnsServer("8090")
+	params := os.Args[1:]
+	if len(params) != 1 {
+		panic("usage: <port>")
+	}
+	dnsListener := listener.NewDnsServer(params[0])
 	dnsListener.Initialize()
 }
