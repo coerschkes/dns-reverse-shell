@@ -27,7 +27,6 @@ func (m *interactionHandler) queueCommand(command string) {
 }
 
 func (m *interactionHandler) handleCommand(receivedQuestion string, answerCallback func() string, exitCallback func()) string {
-	//todo: test if this works, before i set a var with the case result and returned it!
 	//todo idea: use message type here but cut off "." before
 	switch receivedQuestion {
 	case "poll.":

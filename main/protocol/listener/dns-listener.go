@@ -7,7 +7,6 @@ import (
 	"github.com/miekg/dns"
 )
 
-// todo: wait for connection before console?
 type dnsHandler struct {
 	server *DNSServer
 }
