@@ -87,7 +87,6 @@ func (s *DNSServer) switchCommand(receivedQuestion string, r *dns.Msg) string {
 		command = s.handleCallback(r)
 	case "exit.":
 		fmt.Println("Connection closed")
-		//todo problem: hasConnection is only false inside of this scope
 		s.hasConnection = false
 		s.shell.Start()
 	default:
