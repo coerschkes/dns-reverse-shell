@@ -47,7 +47,7 @@ todo: add usage
 - [X] Dns communication
 - [X] Message splitter
 - [X] Polling (if idle only poll twice per minute to prevent flooding)
-- [ ] Protocol for sending "big" messages
+- [ ] Protocol for sending "big" messages -> currently everything crashes if the message is too big
 - [ ] Navigation improvement: navigation relative to the current path
 - [ ] Command chaining
 - [ ] Multiple sessions
