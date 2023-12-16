@@ -69,10 +69,8 @@ func (c *serverCommandHandler) Default(defaultCallback func(string)) {
 
 func (c *serverCommandHandler) resetTimeout(exitCallback func()) {
 	c.timeoutExecutor.reset()
-	if c.timeoutExecutor.callback != nil {
-		c.timeoutExecutor.callback = func() {
-			c.Exit(exitCallback)
-		}
+	c.timeoutExecutor.callback = func() {
+		c.Exit(exitCallback)
 	}
 }
 
