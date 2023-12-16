@@ -46,6 +46,9 @@ func (c *clientCommandHandler) Poll(callback func()) {
 func (c *clientCommandHandler) Answer(value string, callback func(string)) {
 	c.idleCounter = 1
 	output := c.executeCommand(value)
+	if output == "" {
+		output = "empty"
+	}
 	callback(output)
 }
 func (c *clientCommandHandler) Exit(callback func()) {
