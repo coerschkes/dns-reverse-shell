@@ -2,6 +2,9 @@ package server
 
 import "time"
 
+const timeout = 9 * time.Second
+const timeoutIterations = 10
+
 type timeoutExecutor struct {
 	counter  int
 	callback func()
@@ -20,9 +23,9 @@ func (t *timeoutExecutor) start() {
 		if t.ex {
 			return
 		}
-		time.Sleep(1 * time.Second)
+		time.Sleep(timeout)
 		t.counter++
-		if t.counter >= 10 {
+		if t.counter >= timeoutIterations {
 			t.exit()
 			t.callback()
 		}

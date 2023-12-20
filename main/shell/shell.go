@@ -3,6 +3,7 @@ package shell
 import (
 	"bufio"
 	"dns-reverse-shell/main/shell/navigation"
+	"dns-reverse-shell/main/utils"
 	"fmt"
 	"os"
 	"strings"
@@ -71,7 +72,7 @@ func (s Shell) callback(text string) {
 	} else {
 		s.callbackFn(text)
 	}
-	println("waiting for answer..\n")
+	println(utils.CurrentTimeAsLogFormat() + "waiting for answer..\n")
 	s.Wait()
 	s.printPrompt()
 }
