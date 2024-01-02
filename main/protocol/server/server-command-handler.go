@@ -38,7 +38,6 @@ func (c *serverCommandHandler) HandleCommand(value string, pollCallback func(), 
 		}
 	case "answer.":
 		c.Answer("ok", answerCallback)
-		c.shell.Resume()
 		break
 	case "exit.":
 		c.Exit(exitCallback)

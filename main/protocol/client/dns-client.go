@@ -35,11 +35,13 @@ func (d DNSClient) Start() {
 
 func (d DNSClient) sendMessage(commandType string, message string) {
 	msg := d.messageHandler.CreateQuestionMessage(commandType, message)
-	in, _, err := d.client.Exchange(msg, d.address)
-	if err != nil {
-		fmt.Println(utils.CurrentTimeAsLogFormat() + err.Error())
-	} else {
-		d.handleAnswer(in)
+	for i, _ := range msg {
+		in, _, err := d.client.Exchange(msg[i], d.address)
+		if err != nil {
+			fmt.Println(utils.CurrentTimeAsLogFormat() + err.Error())
+		} else {
+			d.handleAnswer(in)
+		}
 	}
 }
 

