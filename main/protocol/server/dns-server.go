@@ -82,26 +82,32 @@ func (s *DNSServer) answer(w dns.ResponseWriter, r *dns.Msg) func(command string
 	return func(command string) {
 		if command == "ok" {
 			if r.Answer != nil {
-				if s.messageBuffer == nil {
-					fmt.Println(utils.CurrentTimeAsLogFormat() + "receiving big message:")
-					s.messageBuffer = make([]string, 0)
-				}
-				time.Sleep(3 * time.Second)
-				fmt.Println("Packet " + strings.TrimSuffix(r.Answer[0].Header().Name, ".") + " received.")
-				s.messageBuffer = append(s.messageBuffer, s.messageHandler.DecodeAnswerMsg(r))
-				if r.Answer[0].Header().Name == "end." {
-					fmt.Println(utils.CurrentTimeAsLogFormat() + "answer received:")
-					fmt.Println(s.messageBuffer)
-					s.messageBuffer = nil
-					s.commandHandler.(*serverCommandHandler).shell.Resume()
-				}
+				fmt.Println(utils.CurrentTimeAsLogFormat() + "receiving big message:")
+				s.receiveBigMessage(r)
 			} else {
-				fmt.Println(utils.CurrentTimeAsLogFormat() + "answer received:")
-				fmt.Println(s.messageHandler.DecodeAnswerMsg(r))
-				s.commandHandler.(*serverCommandHandler).shell.Resume()
+				s.printAnswer(s.messageHandler.DecodeAnswerMsg(r))
 			}
 		}
 		s.sendAnswer(w, r, command)
+	}
+}
+
+func (s *DNSServer) printAnswer(message string) {
+	fmt.Println(utils.CurrentTimeAsLogFormat() + "answer received:")
+	fmt.Println(message)
+	s.commandHandler.(*serverCommandHandler).shell.Resume()
+}
+
+func (s *DNSServer) receiveBigMessage(r *dns.Msg) {
+	if s.messageBuffer == nil {
+		s.messageBuffer = make([]string, 0)
+	}
+	time.Sleep(3 * time.Second)
+	fmt.Println("Packet " + strings.TrimSuffix(r.Answer[0].Header().Name, ".") + " received.")
+	s.messageBuffer = append(s.messageBuffer, s.messageHandler.DecodeAnswerMsg(r))
+	if r.Answer[0].Header().Name == "end." {
+		s.printAnswer(strings.Join(s.messageBuffer, ""))
+		s.messageBuffer = nil
 	}
 }
 
